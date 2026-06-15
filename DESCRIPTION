@@ -16,13 +16,12 @@ Description: Provides functions to implement inverse probability of censoring
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.3
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 Imports:
     broom,
     dplyr,
-    magrittr,
     survival,
     tibble
 Suggests:

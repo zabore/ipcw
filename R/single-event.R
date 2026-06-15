@@ -18,7 +18,6 @@
 #' dat_long <- get_ipcw_wgt(single_example_dat)
 #' head(dat_long)
 #'
-#' @importFrom magrittr %>%
 #' @importFrom survival survSplit coxph Surv
 #' @importFrom dplyr mutate arrange select rename full_join case_when row_number
 #' @importFrom tibble add_column
@@ -29,7 +28,7 @@ get_ipcw_wgt <- function(data) {
   times <- sort(unique(data$t[data$delta == 0]))
 
   dat_prep <-
-    data %>%
+    data |>
     mutate(
       censor = 1 - delta,
       tstart = 0,
@@ -43,7 +42,7 @@ get_ipcw_wgt <- function(data) {
       end = "t",
       start = "tstart",
       event = "delta"
-    ) %>%
+    ) |>
     arrange(id, t)
 
   dat_long2 <-
@@ -53,20 +52,20 @@ get_ipcw_wgt <- function(data) {
       end = "t",
       start = "tstart",
       event = "censor"
-    ) %>%
+    ) |>
     arrange(id, t)
 
   dat_long0 <-
-    dat_long1 %>%
-    select(-censor) %>%
-    add_column(censor = dat_long2$censor) %>%
+    dat_long1 |>
+    select(-censor) |>
+    add_column(censor = dat_long2$censor) |>
     rename(tstop = t)
 
   cens_mod <- coxph(Surv(tstart, tstop, censor) ~ W2,
                     data = dat_long0, timefix = FALSE)
 
   dat_long3 <-
-    dat_long0 %>%
+    dat_long0 |>
     mutate(
       tstop = tstart,
       tstart = 0,
@@ -80,9 +79,9 @@ get_ipcw_wgt <- function(data) {
 
   dat_long3$wgt <- 1 / dat_long3$inv_wgt
 
-  dat_long0 %>%
+  dat_long0 |>
     full_join(
-      dat_long3 %>% select(id, tstop, wgt),
+      dat_long3 |> select(id, tstop, wgt),
       by = c("id", "tstart" = "tstop")
     )
 }
@@ -116,7 +115,6 @@ get_ipcw_wgt <- function(data) {
 #' data(single_example_ipcw_dat)
 #' get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
 #'
-#' @importFrom magrittr %>%
 #' @importFrom survival coxph Surv
 #' @importFrom broom tidy
 #' @importFrom dplyr full_join rename
@@ -127,9 +125,9 @@ get_ipcw_cox_fit <- function(data, weight) {
                         weights = data[[weight]],
                         timefix = FALSE)
   full_join(
-    tidy(ipcw_cox_fit)[, 1:4] %>%
+    tidy(ipcw_cox_fit)[, 1:4] |>
       rename(log_hr = estimate, log_hr_se = std.error, log_hr_rob_se = robust.se),
-    tidy(ipcw_cox_fit, exponentiate = TRUE, conf.int = TRUE)[, c(1, 2, 7, 8)] %>%
+    tidy(ipcw_cox_fit, exponentiate = TRUE, conf.int = TRUE)[, c(1, 2, 7, 8)] |>
       rename(hr = estimate, hr_ci_low = conf.low, hr_ci_high = conf.high),
     by = "term"
   )
@@ -191,7 +189,6 @@ get_ipcw_km_prob_x <- function(data, pre_times = seq(0, 50, 1)) {
 #' data(single_example_ipcw_dat)
 #' get_cox_fit(single_example_ipcw_dat)
 #'
-#' @importFrom magrittr %>%
 #' @importFrom survival coxph Surv
 #' @importFrom broom tidy
 #' @importFrom dplyr full_join rename
@@ -200,8 +197,8 @@ get_cox_fit <- function(data) {
   cox_fit <- coxph(Surv(tstart, tstop, delta) ~ x, data = data,
                    timefix = FALSE)
   full_join(
-    tidy(cox_fit)[, 1:3] %>% rename(log_hr = estimate, log_hr_se = std.error),
-    tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE)[, c(1, 2, 6, 7)] %>%
+    tidy(cox_fit)[, 1:3] |> rename(log_hr = estimate, log_hr_se = std.error),
+    tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE)[, c(1, 2, 6, 7)] |>
       rename(hr = estimate, hr_ci_low = conf.low, hr_ci_high = conf.high),
     by = "term"
   )

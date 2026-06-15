@@ -330,7 +330,8 @@ cuminc_ipcw <- function(data_long,
 fg_split <- function(data_long) {
   times <- sort(unique(data_long$tstop[data_long$censor == 1]))
 
-  event2_dat <- select(data_long[data_long$delta == "event_2", ], id, z1, event2_time)
+  event2_dat <- data_long[data_long$delta == "event_2", ] |>
+    select(id, z1, event2_time)
   cens_dat <- data.frame(
     tstart = c(0, times),
     tstop  = c(times, Inf),
