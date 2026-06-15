@@ -1,0 +1,35 @@
+Package: ipcw
+Title: Inverse Probability of Censoring Weighted Methods for Survival Analysis
+Version: 0.1.0
+Authors@R: c(
+    person("Emily", "Zabor", email = "emily.zabor@gmail.com",
+           role = c("aut", "cre")),
+    person("Anne", "Eaton", role = "aut")
+  )
+Description: Provides functions to implement inverse probability of censoring
+    weighted (IPCW) methods for survival analysis, covering both single-event
+    and competing-risks settings. Includes utilities for computing IPCW weights,
+    fitting weighted Cox proportional hazards models, estimating weighted
+    Kaplan-Meier survival curves, and computing weighted cumulative incidence
+    functions under competing risks. Bootstrap variance estimation is also
+    supported.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Depends:
+    R (>= 4.0.0)
+Imports:
+    broom,
+    dplyr,
+    magrittr,
+    survival,
+    tibble
+Suggests:
+    ggplot2,
+    ggsurvfit,
+    gt,
+    knitr,
+    purrr,
+    rmarkdown
+VignetteBuilder: knitr
