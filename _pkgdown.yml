@@ -1,36 +1,40 @@
 url: https://zabore.github.io/ipcw
 
 template:
-  params:
-    bootswatch: flatly
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    bg: "#ffffff"
+    fg: "#4b4b45"
+    primary: "#0078bf"
+    success: "#f08122"
 
 development:
-  mode: auto
-
-figures:
-  dev: png
-  dpi: 96
+  mode: release
+  version_label: default
 
 home:
   title: "ipcw: Inverse Probability of Censoring Weighted Methods"
   description: >
     R functions for IPCW analysis of single-event and competing risks
     survival data, companion to Zabor & Eaton (2025).
+  sidebar:
+    structure: [links, license, community, citation, authors, dev]
 
 navbar:
-  title: "ipcw"
-  left:
-    - text: "Get started"
-      menu:
-        - text: "Single-event IPCW"
-          href: articles/single-event-guided-example.html
-        - text: "Competing-risks IPCW"
-          href: articles/competing-risks-guided-example.html
-    - text: "Reference"
-      href: reference/index.html
-  right:
-    - icon: fa-github
+  type: light
+  structure:
+    left:  [home, reference, articles, news]
+    right: [search, github]
+  components:
+    home:
+      icon: fa-home
+      href: index.html
+      aria-label: Home
+    github:
+      icon: fa-github
       href: https://github.com/zabore/ipcw
+      aria-label: GitHub
 
 reference:
   - title: "Single-event IPCW"
