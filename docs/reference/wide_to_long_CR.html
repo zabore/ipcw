@@ -26,6 +26,7 @@ for the censoring distribution and for use with add_ipcw_weights()."></head><bod
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
     <li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/zabore/ipcw" aria-label="GitHub"><span class="fa fa-github"></span></a></li>
@@ -71,11 +72,19 @@ for the censoring distribution and for use with <code><a href="add_ipcw_weights.
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_CR</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span>
-<span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu">wide_to_long_CR</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span>
-<span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_CR</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu">wide_to_long_CR</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   z1 id censor event2_time       tstart        tstop  delta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  0  1      0          NA 0.0000000000 0.0008870787 censor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  0  1      0          NA 0.0008870787 0.0236331037 censor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  0  1      0          NA 0.0236331037 0.0295500713 censor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  0  1      0          NA 0.0295500713 0.0724101320 censor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  0  1      0          NA 0.0724101320 0.0812450008 censor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  0  1      0          NA 0.0812450008 0.1824410379 censor</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -26,6 +26,7 @@ the p_notcens column (as added by add_ipcw_weights())."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
     <li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/zabore/ipcw" aria-label="GitHub"><span class="fa fa-github"></span></a></li>
@@ -86,12 +87,16 @@ stratum-specific maximum follow-up times are set to <code>NA</code>. Default is
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_CR</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span>
-<span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="wide_to_long_CR.html">wide_to_long_CR</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
-<span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="add_ipcw_weights.html">add_ipcw_weights</a></span><span class="op">(</span><span class="va">dat_long</span>, strat <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span>
-<span><span class="fu">cuminc_ipcw</span><span class="op">(</span><span class="va">dat_long</span>, esttimes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span>, <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span>
-<span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_CR</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="wide_to_long_CR.html">wide_to_long_CR</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="add_ipcw_weights.html">add_ipcw_weights</a></span><span class="op">(</span><span class="va">dat_long</span>, strat <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Loglik converged before variable  3 ; beta may be infinite. </span>
+<span class="r-in"><span><span class="fu">cuminc_ipcw</span><span class="op">(</span><span class="va">dat_long</span>, esttimes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span>, <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.0000000 0.2525084 0.3656652 0.4349979 0.4489364 0.4768644 0.4768644</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.4768644 0.4847719 0.4847719 0.4847719</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

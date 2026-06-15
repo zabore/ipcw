@@ -20,52 +20,52 @@ sim_data_CR(
 
 ## Arguments
 
-  - n:
-    
-    Integer. Number of subjects to simulate. Default is 100.
+- n:
 
-  - censoring:
-    
-    Character string specifying the censoring mechanism. One of
-    `"none"`, `"independent"`, or `"baseline"` (censoring rate depends
-    on `z1`). Default is `"none"`.
+  Integer. Number of subjects to simulate. Default is 100.
 
-  - beta1:
-    
-    Numeric. Log sub-distribution hazard ratio for `z1 = 1` vs `z1 = 0`
-    for event type 1. Default is `log(1.5)`.
+- censoring:
 
-  - beta2:
-    
-    Numeric. Log sub-distribution hazard ratio for `z1 = 2` vs `z1 = 0`
-    for event type 1. Default is `log(2.25)`.
+  Character string specifying the censoring mechanism. One of `"none"`,
+  `"independent"`, or `"baseline"` (censoring rate depends on `z1`).
+  Default is `"none"`.
 
-  - beta3:
-    
-    Numeric. Log sub-distribution hazard ratio for `z1 = 3` vs `z1 = 0`
-    for event type 1. Default is `log(3.4)`.
+- beta1:
 
-  - p:
-    
-    Numeric in (0, 1). Baseline probability of event type 1 in the
-    reference group (`z1 = 0`). Default is `0.3`.
+  Numeric. Log sub-distribution hazard ratio for `z1 = 1` vs `z1 = 0`
+  for event type 1. Default is `log(1.5)`.
+
+- beta2:
+
+  Numeric. Log sub-distribution hazard ratio for `z1 = 2` vs `z1 = 0`
+  for event type 1. Default is `log(2.25)`.
+
+- beta3:
+
+  Numeric. Log sub-distribution hazard ratio for `z1 = 3` vs `z1 = 0`
+  for event type 1. Default is `log(3.4)`.
+
+- p:
+
+  Numeric in (0, 1). Baseline probability of event type 1 in the
+  reference group (`z1 = 0`). Default is `0.3`.
 
 ## Value
 
 A data frame with columns:
 
-  - z1:
-    
-    Four-level factor covariate (levels 0-3).
+- z1:
 
-  - delta:
-    
-    Factor event indicator with levels `"censor"`, `"event_1"`,
-    `"event_2"`.
+  Four-level factor covariate (levels 0-3).
 
-  - t:
-    
-    Event or censoring time.
+- delta:
+
+  Factor event indicator with levels `"censor"`, `"event_1"`,
+  `"event_2"`.
+
+- t:
+
+  Event or censoring time.
 
 ## Examples
 
@@ -73,4 +73,7 @@ A data frame with columns:
 set.seed(42)
 dat <- sim_data_CR(n = 200, censoring = "baseline")
 table(dat$delta)
+#> 
+#>  censor event_1 event_2 
+#>      74      85      41 
 ```

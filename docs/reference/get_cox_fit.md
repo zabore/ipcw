@@ -1,9 +1,10 @@
 # Fit a standard (unweighted) Cox proportional hazards model
 
-Convenience wrapper around `survival::coxph()` for the covariate `x`
-using counting-process (`tstart`, `tstop`) time variables. Returns
-log-hazard ratio estimates with standard errors and the exponentiated
-hazard ratio with 95% confidence intervals.
+Convenience wrapper around
+[`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html) for
+the covariate `x` using counting-process (`tstart`, `tstop`) time
+variables. Returns log-hazard ratio estimates with standard errors and
+the exponentiated hazard ratio with 95% confidence intervals.
 
 ## Usage
 
@@ -13,42 +14,46 @@ get_cox_fit(data)
 
 ## Arguments
 
-  - data:
-    
-    A data frame in long (counting-process) format containing columns
-    `tstart`, `tstop`, `delta`, and `x`.
+- data:
+
+  A data frame in long (counting-process) format containing columns
+  `tstart`, `tstop`, `delta`, and `x`.
 
 ## Value
 
 A data frame with one row per term containing:
 
-  - term:
-    
-    Covariate name.
+- term:
 
-  - log\_hr:
-    
-    Log hazard ratio estimate.
+  Covariate name.
 
-  - log\_hr\_se:
-    
-    Standard error of the log hazard ratio.
+- log_hr:
 
-  - hr:
-    
-    Hazard ratio estimate.
+  Log hazard ratio estimate.
 
-  - hr\_ci\_low:
-    
-    Lower 95% confidence limit.
+- log_hr_se:
 
-  - hr\_ci\_high:
-    
-    Upper 95% confidence limit.
+  Standard error of the log hazard ratio.
+
+- hr:
+
+  Hazard ratio estimate.
+
+- hr_ci_low:
+
+  Lower 95% confidence limit.
+
+- hr_ci_high:
+
+  Upper 95% confidence limit.
 
 ## Examples
 
 ``` r
 data(single_example_ipcw_dat)
 get_cox_fit(single_example_ipcw_dat)
+#> # A tibble: 1 × 6
+#>   term  log_hr log_hr_se    hr hr_ci_low hr_ci_high
+#>   <chr>  <dbl>     <dbl> <dbl>     <dbl>      <dbl>
+#> 1 x      -1.85     0.147 0.157     0.117      0.209
 ```

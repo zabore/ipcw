@@ -13,15 +13,15 @@ cuminc_waverage(dat, esttimes = seq(from = 0, to = 10, length.out = 100))
 
 ## Arguments
 
-  - dat:
-    
-    A wide-format competing risks data frame with columns `t`, `delta`,
-    and `z1`.
+- dat:
 
-  - esttimes:
-    
-    Numeric vector of times at which to return estimates. Defaults to
-    100 equally spaced points from 0 to 10.
+  A wide-format competing risks data frame with columns `t`, `delta`,
+  and `z1`.
+
+- esttimes:
+
+  Numeric vector of times at which to return estimates. Defaults to 100
+  equally spaced points from 0 to 10.
 
 ## Value
 
@@ -35,4 +35,6 @@ follow-up times are set to `NA`.
 set.seed(42)
 dat <- sim_data_CR(n = 200, censoring = "baseline")
 cuminc_waverage(dat, esttimes = seq(0, 5, 0.5))
+#>  [1] 0.0000000 0.2549215 0.3706694 0.4349190 0.4462671 0.4689078 0.4689078
+#>  [8] 0.4689078        NA        NA        NA
 ```

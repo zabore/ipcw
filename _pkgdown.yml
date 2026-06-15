@@ -35,6 +35,9 @@ navbar:
       icon: fa-github
       href: https://github.com/zabore/ipcw
       aria-label: GitHub
+    news:
+      text: News
+      href: news/index.html
 
 reference:
   - title: "Single-event IPCW"

@@ -23,68 +23,68 @@ sim_data_SE(
 
 ## Arguments
 
-  - n:
-    
-    Integer. Number of subjects to simulate. Default is 500.
+- n:
 
-  - alpha:
-    
-    Numeric. Shape parameter for the gamma frailty distribution, also
-    used as the Pareto exponent for `W1` and `W2`. Default is `0.05`.
+  Integer. Number of subjects to simulate. Default is 500.
 
-  - x\_prop:
-    
-    Numeric in (0, 1). Probability of treatment (`x = 1`). Default is
-    `0.5`.
+- alpha:
 
-  - a:
-    
-    Numeric. Weibull shape parameter for the event time distribution.
-    Default is `2`.
+  Numeric. Shape parameter for the gamma frailty distribution, also used
+  as the Pareto exponent for `W1` and `W2`. Default is `0.05`.
 
-  - sigma:
-    
-    Numeric. Weibull scale parameter for the event time distribution.
-    Default is `500`.
+- x_prop:
 
-  - beta:
-    
-    Numeric. Log hazard ratio for the treatment effect on event time.
-    Default is `log(0.25)`.
+  Numeric in (0, 1). Probability of treatment (`x = 1`). Default is
+  `0.5`.
 
-  - lambda:
-    
-    Numeric. Baseline censoring rate. Default is `0.01`.
+- a:
 
-  - phi:
-    
-    Numeric. Effect of `W2` on the censoring rate (log scale). Negative
-    values mean higher `W2` leads to a lower censoring rate (i.e.,
-    longer follow-up for high-`W2` subjects). Default is `-5`.
+  Numeric. Weibull shape parameter for the event time distribution.
+  Default is `2`.
+
+- sigma:
+
+  Numeric. Weibull scale parameter for the event time distribution.
+  Default is `500`.
+
+- beta:
+
+  Numeric. Log hazard ratio for the treatment effect on event time.
+  Default is `log(0.25)`.
+
+- lambda:
+
+  Numeric. Baseline censoring rate. Default is `0.01`.
+
+- phi:
+
+  Numeric. Effect of `W2` on the censoring rate (log scale). Negative
+  values mean higher `W2` leads to a lower censoring rate (i.e., longer
+  follow-up for high-`W2` subjects). Default is `-5`.
 
 ## Value
 
 A data frame with columns:
 
-  - S:
-    
-    True (latent) event time.
+- S:
 
-  - t:
-    
-    Observed time (minimum of `S` and the censoring time).
+  True (latent) event time.
 
-  - delta:
-    
-    Event indicator: 1 = event occurred, 0 = censored.
+- t:
 
-  - x:
-    
-    Binary treatment indicator (0 or 1).
+  Observed time (minimum of `S` and the censoring time).
 
-  - W2:
-    
-    Ancillary biomarker covariate that drives informative censoring.
+- delta:
+
+  Event indicator: 1 = event occurred, 0 = censored.
+
+- x:
+
+  Binary treatment indicator (0 or 1).
+
+- W2:
+
+  Ancillary biomarker covariate that drives informative censoring.
 
 ## Examples
 
@@ -92,5 +92,10 @@ A data frame with columns:
 set.seed(20240429)
 dat <- sim_data_SE(n = 500)
 table(dat$delta)
+#> 
+#>   0   1 
+#> 198 302 
 summary(dat$t)
+#>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+#>    0.6884  172.7074  441.1759  552.9262  803.2563 2429.5429 
 ```

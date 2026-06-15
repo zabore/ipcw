@@ -1,13 +1,14 @@
 # Competing Risks IPCW: Guided Example
 
 This vignette demonstrates IPCW methods for competing risks data. We
-simulate a prostate cancer dataset where metastasis (event\_1) and death
-(event\_2) are competing risks, and PSA quartile at baseline (`z1`) both
+simulate a prostate cancer dataset where metastasis (event_1) and death
+(event_2) are competing risks, and PSA quartile at baseline (`z1`) both
 predicts metastasis risk and drives informative censoring.
 
 ## Setup
 
 ``` r
+
 library(ipcw)
 library(survival)
 library(ggplot2)
@@ -16,11 +17,13 @@ library(purrr)
 
 ## Simulate data
 
-`sim_data_CR()` generates competing risks data under a sub-distribution
-hazard model. The covariate `z1` is a four-level factor (PSA quartile).
-We use baseline-dependent censoring so that censoring is informative.
+[`sim_data_CR()`](https://zabore.github.io/ipcw/reference/sim_data_CR.md)
+generates competing risks data under a sub-distribution hazard model.
+The covariate `z1` is a four-level factor (PSA quartile). We use
+baseline-dependent censoring so that censoring is informative.
 
 ``` r
+
 set.seed(9843)
 dat <- sim_data_CR(
   n          = 500,
@@ -39,6 +42,7 @@ table(dat$delta)
 ## Explore the data
 
 ``` r
+
 # Cumulative incidence by PSA quartile
 plot(survfit(Surv(t, delta) ~ z1, data = dat),
      col = 1:4, lty = rep(1:2, each = 4),
@@ -49,6 +53,7 @@ legend("topleft", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
 ![](competing-risks-guided-example_files/figure-html/explore-1.png)
 
 ``` r
+
 # Censoring distribution by PSA quartile
 plot(survfit(Surv(t, delta == "censor") ~ z1, data = dat),
      col = 1:4, xlab = "Time", ylab = "P(not censored)")
@@ -60,6 +65,7 @@ legend("topright", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
 ## Convert to long format and add IPCW weights
 
 ``` r
+
 dat_long <- wide_to_long_CR(dat)
 
 # Cox model weights
@@ -70,6 +76,7 @@ dat_long_strat <- add_ipcw_weights(dat_long, strat = "yes")
 ```
 
 ``` r
+
 ggplot(dat_long_strat, aes(x = 1 / p_notcens)) +
   geom_histogram(bins = 40) +
   xlab("IPCW weight") + ylab("Count") +
@@ -81,6 +88,7 @@ ggplot(dat_long_strat, aes(x = 1 / p_notcens)) +
 ## Estimate cumulative incidence
 
 ``` r
+
 esttimes <- sort(dat$t)
 
 ci_naive   <- cuminc_naive(dat, esttimes)
@@ -89,6 +97,7 @@ ci_cox     <- cuminc_ipcw(dat_long_cox, esttimes)
 ```
 
 ``` r
+
 to_plot <- rbind(
   data.frame(time = esttimes, est = ci_wavg, method = "Weighted average"),
   data.frame(time = esttimes, est = ci_cox,  method = "Cox IPCW")
@@ -109,6 +118,7 @@ ggplot(to_plot, aes(x = time, y = est, colour = method)) +
 ## Fine-Gray IPCW regression
 
 ``` r
+
 dat_long_fg <- fg_split(dat_long)
 
 # Stratified weights
@@ -133,6 +143,7 @@ estimated. The example below uses 500 samples; run in parallel as
 needed.
 
 ``` r
+
 set.seed(20240917)
 
 boot_dat      <- map(1:500, ~ slice_sample(dat, prop = 1, replace = TRUE))

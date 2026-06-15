@@ -5,3 +5,7 @@
 ^docs$
 ^_pkgdown\.yml$
 ^\.github$
+^\.positai$
+^\.claude$
+^README\.Rmd$
+^codecov\.yml$

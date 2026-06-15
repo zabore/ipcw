@@ -11,11 +11,13 @@ get_boot_pci(data)
 
 ## Arguments
 
-  - data:
-    
-    A data frame with a column `log_hr` containing bootstrap log hazard
-    ratio estimates, as returned by multiple calls to
-    `get_ipcw_cox_fit()` or `get_cox_fit()`.
+- data:
+
+  A data frame with a column `log_hr` containing bootstrap log hazard
+  ratio estimates, as returned by multiple calls to
+  [`get_ipcw_cox_fit()`](https://zabore.github.io/ipcw/reference/get_ipcw_cox_fit.md)
+  or
+  [`get_cox_fit()`](https://zabore.github.io/ipcw/reference/get_cox_fit.md).
 
 ## Value
 
@@ -27,4 +29,6 @@ percentiles of the bootstrap distribution.
 ``` r
 boot_results <- data.frame(log_hr = rnorm(500, mean = -0.5, sd = 0.2))
 get_boot_pci(boot_results)
+#>       2.5%      97.5% 
+#> -0.9221499 -0.1397219 
 ```

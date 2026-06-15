@@ -9,6 +9,7 @@ because it depends on an ancillary biomarker (`W2`).
 ## Setup
 
 ``` r
+
 library(ipcw)
 library(survival)
 library(purrr)
@@ -19,14 +20,13 @@ library(purrr)
 The package ships with `single_example_dat`, a simulated dataset of 500
 subjects generated with `set.seed(20240429)`. The key variables are:
 
-  - `t`: observed time (event or censoring)
-  - `delta`: event indicator (1 = event, 0 = censored)
-  - `x`: treatment (0 = chemotherapy, 1 = TKI)
-  - `W2`: ancillary biomarker that drives informative censoring
-
-<!-- end list -->
+- `t`: observed time (event or censoring)
+- `delta`: event indicator (1 = event, 0 = censored)
+- `x`: treatment (0 = chemotherapy, 1 = TKI)
+- `W2`: ancillary biomarker that drives informative censoring
 
 ``` r
+
 data(single_example_dat)
 head(single_example_dat)
 #> # A tibble: 6 × 5
@@ -44,6 +44,7 @@ The code below re-creates this dataset from scratch, so you can see
 exactly how it was generated.
 
 ``` r
+
 # Fix simulation parameters
 n       <- 500
 alpha   <- 0.05
@@ -73,12 +74,13 @@ single_example_dat <- tibble::tibble(S, t, delta, x, W2)
 
 ## Prepare data and compute IPCW weights
 
-`get_ipcw_wgt()` converts the wide dataset to counting-process (long)
-format and appends the unstabilized IPCW weight column `wgt`. The
-package also provides `single_example_ipcw_dat` with these weights
-pre-computed.
+[`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md)
+converts the wide dataset to counting-process (long) format and appends
+the unstabilized IPCW weight column `wgt`. The package also provides
+`single_example_ipcw_dat` with these weights pre-computed.
 
 ``` r
+
 data(single_example_ipcw_dat)
 head(single_example_ipcw_dat)
 #> # A tibble: 6 × 11
@@ -95,6 +97,7 @@ head(single_example_ipcw_dat)
 Alternatively, compute the weights directly:
 
 ``` r
+
 dat_long <- get_ipcw_wgt(single_example_dat)
 ```
 
@@ -105,6 +108,7 @@ installed, you can plot the IPCW K-M curves with base R instead (see the
 commented code).
 
 ``` r
+
 library(ggsurvfit)
 #> Warning: package 'ggsurvfit' was built under R version 4.5.1
 #> Loading required package: ggplot2
@@ -126,6 +130,7 @@ ggsurvfit(km_fit2) +
 ![](single-event-guided-example_files/figure-html/km-plot-1.png)
 
 ``` r
+
 km_fit <- survfit(Surv(tstart, tstop, delta) ~ x,
                   data    = single_example_ipcw_dat,
                   weights = wgt,
@@ -139,6 +144,7 @@ legend("topright", legend = c("Chemotherapy", "TKI"), col = 1:2, lty = 1)
 ## IPCW Cox regression
 
 ``` r
+
 ipcw_cox_fit <- coxph(
   Surv(tstart, tstop, delta) ~ x + cluster(id),
   data    = single_example_ipcw_dat,
@@ -154,6 +160,7 @@ Or use the convenience wrapper, which also returns the hazard ratio and
 robust-SE-based confidence interval:
 
 ``` r
+
 get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
 #> # A tibble: 1 × 7
 #>   term  log_hr log_hr_se log_hr_rob_se    hr hr_ci_low hr_ci_high
@@ -168,6 +175,7 @@ the weights are estimated. The code below runs 500 bootstrap samples; in
 practice you may want to run this in parallel.
 
 ``` r
+
 set.seed(20240917)
 B <- 500
 

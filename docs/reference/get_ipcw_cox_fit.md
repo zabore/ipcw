@@ -13,51 +13,56 @@ get_ipcw_cox_fit(data, weight)
 
 ## Arguments
 
-  - data:
-    
-    A data frame in long (counting-process) format, as returned by
-    `get_ipcw_wgt()`. Must contain columns `tstart`, `tstop`, `delta`,
-    `id`, and the weight column named by `weight`.
+- data:
 
-  - weight:
-    
-    A character string giving the name of the weight column in `data`.
+  A data frame in long (counting-process) format, as returned by
+  [`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md).
+  Must contain columns `tstart`, `tstop`, `delta`, `id`, and the weight
+  column named by `weight`.
+
+- weight:
+
+  A character string giving the name of the weight column in `data`.
 
 ## Value
 
 A data frame with one row per term containing:
 
-  - term:
-    
-    Covariate name.
+- term:
 
-  - log\_hr:
-    
-    Log hazard ratio estimate.
+  Covariate name.
 
-  - log\_hr\_se:
-    
-    Model-based standard error of the log hazard ratio.
+- log_hr:
 
-  - log\_hr\_rob\_se:
-    
-    Robust (sandwich) standard error of the log hazard ratio.
+  Log hazard ratio estimate.
 
-  - hr:
-    
-    Hazard ratio estimate.
+- log_hr_se:
 
-  - hr\_ci\_low:
-    
-    Lower 95% confidence limit (based on robust SE).
+  Model-based standard error of the log hazard ratio.
 
-  - hr\_ci\_high:
-    
-    Upper 95% confidence limit (based on robust SE).
+- log_hr_rob_se:
+
+  Robust (sandwich) standard error of the log hazard ratio.
+
+- hr:
+
+  Hazard ratio estimate.
+
+- hr_ci_low:
+
+  Lower 95% confidence limit (based on robust SE).
+
+- hr_ci_high:
+
+  Upper 95% confidence limit (based on robust SE).
 
 ## Examples
 
 ``` r
 data(single_example_ipcw_dat)
 get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
+#> # A tibble: 1 × 7
+#>   term  log_hr log_hr_se log_hr_rob_se    hr hr_ci_low hr_ci_high
+#>   <chr>  <dbl>     <dbl>         <dbl> <dbl>     <dbl>      <dbl>
+#> 1 x      -1.21     0.103         0.162 0.298     0.217      0.410
 ```
