@@ -1,0 +1,68 @@
+url: https://zabore2.github.io/ipcw
+
+template:
+  params:
+    bootswatch: flatly
+
+development:
+  mode: auto
+
+figures:
+  dev: png
+  dpi: 96
+
+home:
+  title: "ipcw: Inverse Probability of Censoring Weighted Methods"
+  description: >
+    R functions for IPCW analysis of single-event and competing risks
+    survival data, companion to Zabor & Eaton (2025).
+
+navbar:
+  title: "ipcw"
+  left:
+    - text: "Get started"
+      menu:
+        - text: "Single-event IPCW"
+          href: articles/single-event-guided-example.html
+        - text: "Competing-risks IPCW"
+          href: articles/competing-risks-guided-example.html
+    - text: "Reference"
+      href: reference/index.html
+  right:
+    - icon: fa-github
+      href: https://github.com/zabore2/ipcw
+
+reference:
+  - title: "Single-event IPCW"
+    desc: >
+      Functions for IPCW analysis of single-event survival data,
+      including weight estimation, weighted Cox regression, and
+      weighted Kaplan-Meier curves.
+    contents:
+      - get_ipcw_wgt
+      - get_ipcw_cox_fit
+      - get_ipcw_km_prob_x
+      - get_cox_fit
+      - get_boot_var
+      - get_boot_pci
+  - title: "Competing-risks IPCW"
+    desc: >
+      Functions for IPCW analysis of competing risks data, including
+      weight estimation, cumulative incidence estimation, and
+      Fine-Gray regression.
+    contents:
+      - sim_data_CR
+      - wide_to_long_CR
+      - add_ipcw_weights
+      - cuminc_naive
+      - cuminc_waverage
+      - cuminc_ipcw
+      - fg_split
+      - add_fg_weights
+      - fg_naive
+      - fg_weighted
+  - title: "Data"
+    desc: "Example datasets included with the package."
+    contents:
+      - single_example_dat
+      - single_example_ipcw_dat
