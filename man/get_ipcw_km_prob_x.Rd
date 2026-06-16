@@ -2,23 +2,34 @@
 % Please edit documentation in R/single-event.R
 \name{get_ipcw_km_prob_x}
 \alias{get_ipcw_km_prob_x}
-\title{Estimate IPCW Kaplan-Meier survival probabilities by binary covariate}
+\title{Estimate IPCW Kaplan-Meier survival probabilities by covariate}
 \usage{
-get_ipcw_km_prob_x(data, pre_times = seq(0, 50, 1))
+get_ipcw_km_prob_x(
+  data,
+  covariate = "x",
+  weight_var = "wgt",
+  pre_times = seq(0, 50, 1)
+)
 }
 \arguments{
 \item{data}{A data frame in long (counting-process) format with an IPCW
-weight column \code{wgt}, as returned by \code{\link[=get_ipcw_wgt]{get_ipcw_wgt()}}.}
+weight column, as returned by \code{\link[=get_ipcw_wgt]{get_ipcw_wgt()}}.}
+
+\item{covariate}{Character string. Name of the stratification covariate
+column. Default is \code{"x"}.}
+
+\item{weight_var}{Character string. Name of the IPCW weight column. Default
+is \code{"wgt"}.}
 
 \item{pre_times}{Numeric vector of times at which to evaluate survival
 probabilities. Defaults to \code{seq(0, 50, 1)}.}
 }
 \value{
-A tibble with columns \code{time}, \code{surv} (survival probability), and
-\code{x} (stratum).
+A tibble with columns \code{time}, \code{surv} (survival probability), and a
+column named after \code{covariate} containing the stratum labels.
 }
 \description{
-Fits a weighted Kaplan-Meier estimator stratified by the binary covariate \code{x}
+Fits a weighted Kaplan-Meier estimator stratified by the specified covariate
 and returns survival probabilities evaluated at a pre-specified set of times.
 }
 \examples{

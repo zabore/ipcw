@@ -4,11 +4,14 @@
 \alias{add_fg_weights}
 \title{Add Fine-Gray IPCW weights to Fine-Gray split data}
 \usage{
-add_fg_weights(data_long_fg, strat = "no")
+add_fg_weights(data_long_fg, covariate = "z1", strat = "no")
 }
 \arguments{
 \item{data_long_fg}{A data frame in Fine-Gray format, as returned by
 \code{\link[=fg_split]{fg_split()}}.}
+
+\item{covariate}{Character string. Name of the covariate column. Default is
+\code{"z1"}.}
 
 \item{strat}{Character. Passed to \code{\link[=add_ipcw_weights]{add_ipcw_weights()}}. \code{"no"} (default)
 uses a Cox model; \code{"yes"} uses stratum-specific KM estimates.}

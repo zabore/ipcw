@@ -4,11 +4,15 @@
 \alias{get_cox_fit}
 \title{Fit a standard (unweighted) Cox proportional hazards model}
 \usage{
-get_cox_fit(data)
+get_cox_fit(data, covariate = "x")
 }
 \arguments{
 \item{data}{A data frame in long (counting-process) format containing
-columns \code{tstart}, \code{tstop}, \code{delta}, and \code{x}.}
+columns \code{tstart}, \code{tstop}, \code{delta}, and the covariate named by
+\code{covariate}.}
+
+\item{covariate}{Character string. Name of the predictor covariate column.
+Default is \code{"x"}.}
 }
 \value{
 A data frame with one row per term containing:
@@ -22,10 +26,10 @@ A data frame with one row per term containing:
 }
 }
 \description{
-Convenience wrapper around \code{\link[survival:coxph]{survival::coxph()}} for the covariate \code{x} using
-counting-process (\code{tstart}, \code{tstop}) time variables. Returns log-hazard
-ratio estimates with standard errors and the exponentiated hazard ratio with
-95\% confidence intervals.
+Convenience wrapper around \code{\link[survival:coxph]{survival::coxph()}} using counting-process
+(\code{tstart}, \code{tstop}) time variables. Returns log-hazard ratio estimates with
+standard errors and the exponentiated hazard ratio with 95\% confidence
+intervals.
 }
 \examples{
 data(single_example_ipcw_dat)

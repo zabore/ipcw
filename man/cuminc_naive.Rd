@@ -4,13 +4,19 @@
 \alias{cuminc_naive}
 \title{Naive (unweighted) cumulative incidence estimate}
 \usage{
-cuminc_naive(dat, esttimes)
+cuminc_naive(dat, esttimes, time_var = "t", event_var = "delta")
 }
 \arguments{
-\item{dat}{A wide-format competing risks data frame with columns \code{t} and
-\code{delta} (factor with levels \code{"censor"}, \code{"event_1"}, \code{"event_2"}).}
+\item{dat}{A wide-format competing risks data frame containing the columns
+specified by \code{time_var} and \code{event_var}.}
 
 \item{esttimes}{Numeric vector of times at which to return estimates.}
+
+\item{time_var}{Character string. Name of the event/censoring time column.
+Default is \code{"t"}.}
+
+\item{event_var}{Character string. Name of the event indicator column.
+Default is \code{"delta"}.}
 }
 \value{
 A numeric vector of cumulative incidence estimates at \code{esttimes}.

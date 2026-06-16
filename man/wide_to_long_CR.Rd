@@ -4,16 +4,38 @@
 \alias{wide_to_long_CR}
 \title{Convert wide competing risks data to long (counting-process) format}
 \usage{
-wide_to_long_CR(dat)
+wide_to_long_CR(
+  dat,
+  time_var = "t",
+  event_var = "delta",
+  covariate = "z1",
+  cens_level = "censor",
+  event2_level = "event_2"
+)
 }
 \arguments{
-\item{dat}{A data frame with columns \code{t} (event/censoring time), \code{delta}
-(factor with levels \code{"censor"}, \code{"event_1"}, \code{"event_2"}), and \code{z1}
-(covariate). Typically the output of \code{\link[=sim_data_CR]{sim_data_CR()}}.}
+\item{dat}{A wide-format competing risks data frame. Must contain the columns
+specified by \code{time_var}, \code{event_var}, and \code{covariate}.}
+
+\item{time_var}{Character string. Name of the event/censoring time column.
+Default is \code{"t"}.}
+
+\item{event_var}{Character string. Name of the event indicator column
+(factor with levels for censoring and the two event types). Default is
+\code{"delta"}.}
+
+\item{covariate}{Character string. Name of the covariate column. Default is
+\code{"z1"}.}
+
+\item{cens_level}{Character string. Factor level in \code{event_var} representing
+censoring. Default is \code{"censor"}.}
+
+\item{event2_level}{Character string. Factor level in \code{event_var}
+representing the competing event (event type 2). Default is \code{"event_2"}.}
 }
 \value{
-A data frame in long format with columns \code{id}, \code{z1}, \code{delta},
-\code{censor}, \code{event2_time}, \code{tstart}, and \code{tstop}.
+A data frame in long format with columns \code{id}, \code{delta}, \code{censor},
+\code{event2_time}, \code{tstart}, \code{tstop}, and the covariate column.
 }
 \description{
 Splits the wide dataset at every censoring time, creating one or more rows

@@ -4,14 +4,29 @@
 \alias{cuminc_waverage}
 \title{Weighted-average (non-parametric) IPCW cumulative incidence estimate}
 \usage{
-cuminc_waverage(dat, esttimes = seq(from = 0, to = 10, length.out = 100))
+cuminc_waverage(
+  dat,
+  esttimes = seq(from = 0, to = 10, length.out = 100),
+  time_var = "t",
+  event_var = "delta",
+  covariate = "z1"
+)
 }
 \arguments{
-\item{dat}{A wide-format competing risks data frame with columns \code{t},
-\code{delta}, and \code{z1}.}
+\item{dat}{A wide-format competing risks data frame containing the columns
+specified by \code{time_var}, \code{event_var}, and \code{covariate}.}
 
 \item{esttimes}{Numeric vector of times at which to return estimates.
 Defaults to 100 equally spaced points from 0 to 10.}
+
+\item{time_var}{Character string. Name of the event/censoring time column.
+Default is \code{"t"}.}
+
+\item{event_var}{Character string. Name of the event indicator column.
+Default is \code{"delta"}.}
+
+\item{covariate}{Character string. Name of the stratification covariate
+column. Default is \code{"z1"}.}
 }
 \value{
 A numeric vector of weighted-average cumulative incidence estimates
@@ -20,9 +35,8 @@ follow-up times are set to \code{NA}.
 }
 \description{
 Estimates the marginal cumulative incidence of event type 1 by computing
-stratum-specific Aalen-Johansen estimates (stratified by \code{z1}) and then
-combining them with sample-proportion weights. This is the non-parametric
-IPCW approach.
+stratum-specific Aalen-Johansen estimates and then combining them with
+sample-proportion weights. This is the non-parametric IPCW approach.
 }
 \examples{
 set.seed(42)

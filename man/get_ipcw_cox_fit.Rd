@@ -4,15 +4,19 @@
 \alias{get_ipcw_cox_fit}
 \title{Fit an IPCW-weighted Cox proportional hazards model}
 \usage{
-get_ipcw_cox_fit(data, weight)
+get_ipcw_cox_fit(data, covariate = "x", weight = "wgt")
 }
 \arguments{
 \item{data}{A data frame in long (counting-process) format, as returned by
 \code{\link[=get_ipcw_wgt]{get_ipcw_wgt()}}. Must contain columns \code{tstart}, \code{tstop}, \code{delta}, \code{id},
-and the weight column named by \code{weight}.}
+the covariate named by \code{covariate}, and the weight column named by
+\code{weight}.}
 
-\item{weight}{A character string giving the name of the weight column in
-\code{data}.}
+\item{covariate}{Character string. Name of the predictor covariate column.
+Default is \code{"x"}.}
+
+\item{weight}{Character string. Name of the weight column. Default is
+\code{"wgt"}.}
 }
 \value{
 A data frame with one row per term containing:

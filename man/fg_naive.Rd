@@ -4,11 +4,20 @@
 \alias{fg_naive}
 \title{Naive Fine-Gray sub-distribution hazard regression}
 \usage{
-fg_naive(dat)
+fg_naive(dat, time_var = "t", event_var = "delta", covariate = "z1")
 }
 \arguments{
-\item{dat}{A wide-format competing risks data frame with columns \code{t},
-\code{delta}, and \code{z1}.}
+\item{dat}{A wide-format competing risks data frame containing the columns
+specified by \code{time_var}, \code{event_var}, and \code{covariate}.}
+
+\item{time_var}{Character string. Name of the event/censoring time column.
+Default is \code{"t"}.}
+
+\item{event_var}{Character string. Name of the event indicator column.
+Default is \code{"delta"}.}
+
+\item{covariate}{Character string. Name of the covariate column. Default is
+\code{"z1"}.}
 }
 \value{
 A matrix with one row per term and two columns: the log

@@ -7,7 +7,8 @@
 cuminc_ipcw(
   data_long,
   esttimes = seq(from = 0, to = 10, length.out = 100),
-  extend = TRUE
+  extend = TRUE,
+  covariate = "z1"
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ Defaults to 100 equally spaced points from 0 to 10.}
 \item{extend}{Logical. If \code{FALSE}, estimates beyond the minimum of the
 stratum-specific maximum follow-up times are set to \code{NA}. Default is
 \code{TRUE}.}
+
+\item{covariate}{Character string. Name of the covariate column, used only
+when \code{extend = FALSE} to compute the truncation time. Default is \code{"z1"}.}
 }
 \value{
 A numeric vector of IPCW cumulative incidence estimates at

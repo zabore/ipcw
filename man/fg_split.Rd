@@ -4,19 +4,25 @@
 \alias{fg_split}
 \title{Prepare long-format data for Fine-Gray weighted regression}
 \usage{
-fg_split(data_long)
+fg_split(data_long, covariate = "z1", event2_level = "event_2")
 }
 \arguments{
 \item{data_long}{A long-format data frame, as returned by \code{\link[=wide_to_long_CR]{wide_to_long_CR()}}.}
+
+\item{covariate}{Character string. Name of the covariate column. Default is
+\code{"z1"}.}
+
+\item{event2_level}{Character string. Factor level in the \code{delta} column
+representing the competing event. Default is \code{"event_2"}.}
 }
 \value{
 A data frame in Fine-Gray format, with additional rows for subjects
-who experienced event_2, sorted by \code{id} and \code{tstart}.
+who experienced the competing event, sorted by \code{id} and \code{tstart}.
 }
 \description{
-After a type-2 event (event_2), subjects are artificially re-entered into
-the risk set (as in the Fine-Gray sub-distribution hazard model). This
-function appends those additional rows, split at every censoring time.
+After a type-2 event, subjects are artificially re-entered into the risk set
+(as in the Fine-Gray sub-distribution hazard model). This function appends
+those additional rows, split at every censoring time.
 }
 \examples{
 set.seed(42)

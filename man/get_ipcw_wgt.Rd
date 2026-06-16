@@ -4,23 +4,30 @@
 \alias{get_ipcw_wgt}
 \title{Compute IPCW weights for single-event survival data}
 \usage{
-get_ipcw_wgt(data)
+get_ipcw_wgt(data, time_var = "t", event_var = "delta", cens_cov = "W2")
 }
 \arguments{
-\item{data}{A data frame with columns \code{t}, \code{delta}, and \code{W2}, as produced by
-the data-generation code in the package vignette.}
+\item{data}{A data frame containing the follow-up time, event indicator, and
+censoring covariate columns.}
+
+\item{time_var}{Character string. Name of the observed follow-up time column.
+Default is \code{"t"}.}
+
+\item{event_var}{Character string. Name of the event indicator column
+(1 = event, 0 = censored). Default is \code{"delta"}.}
+
+\item{cens_cov}{Character string. Name of the covariate column used in the
+Cox model for the censoring distribution. Default is \code{"W2"}.}
 }
 \value{
 A data frame in long (counting-process) format with columns
-\code{tstart}, \code{tstop}, \code{delta}, \code{id}, \code{wgt} (the unstabilized IPCW weight),
-and all original columns.
+\code{tstart}, \code{tstop}, \code{delta} (event indicator), \code{id}, \code{wgt} (the
+unstabilized IPCW weight), and all original columns.
 }
 \description{
 Fits a Cox model for the censoring distribution and returns the original
 dataset in counting-process (long) format with an unstabilized IPCW weight
-column appended. The dataset must contain columns named \code{t} (event/censoring
-time), \code{delta} (event indicator, 1 = event), and \code{W2} (the covariate used to
-model the censoring distribution).
+column appended.
 }
 \examples{
 data(single_example_dat)

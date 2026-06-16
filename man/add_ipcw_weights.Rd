@@ -4,16 +4,25 @@
 \alias{add_ipcw_weights}
 \title{Add IPCW weights to competing risks long-format data}
 \usage{
-add_ipcw_weights(data_long, strat = "no", new_data = NULL, by.start = TRUE)
+add_ipcw_weights(
+  data_long,
+  covariate = "z1",
+  strat = "no",
+  new_data = NULL,
+  by.start = TRUE
+)
 }
 \arguments{
 \item{data_long}{A data frame in long format, as returned by
-\code{\link[=wide_to_long_CR]{wide_to_long_CR()}}. Must contain columns \code{z1}, \code{tstart}, \code{tstop}, and
-\code{censor}.}
+\code{\link[=wide_to_long_CR]{wide_to_long_CR()}}. Must contain columns \code{tstart}, \code{tstop}, \code{censor}, and
+the covariate named by \code{covariate}.}
+
+\item{covariate}{Character string. Name of the covariate column used to
+model the censoring distribution. Default is \code{"z1"}.}
 
 \item{strat}{Character. \code{"no"} (default) fits a single Cox model for the
-censoring distribution using \code{z1} as a covariate. \code{"yes"} estimates
-the censoring distribution non-parametrically within each stratum of \code{z1}.}
+censoring distribution using \code{covariate}. \code{"yes"} estimates the censoring
+distribution non-parametrically within each stratum of \code{covariate}.}
 
 \item{new_data}{Optional data frame to which weights are applied. If \code{NULL}
 (default), weights are computed for \code{data_long} itself.}
@@ -30,7 +39,7 @@ additional column \code{p_notcens}.
 Estimates the probability of remaining uncensored and appends it as column
 \code{p_notcens} to the dataset. Supports two estimation strategies: a Cox
 proportional hazards model (\code{strat = "no"}) or non-parametric (KM) estimates
-within each level of \code{z1} (\code{strat = "yes"}).
+within each level of the covariate (\code{strat = "yes"}).
 }
 \examples{
 set.seed(42)

@@ -4,14 +4,25 @@
 \alias{fg_weighted}
 \title{IPCW-weighted Fine-Gray sub-distribution hazard regression}
 \usage{
-fg_weighted(data_long_fg, extend = TRUE)
+fg_weighted(
+  data_long_fg,
+  covariate = "z1",
+  extend = TRUE,
+  event1_level = "event_1"
+)
 }
 \arguments{
 \item{data_long_fg}{A data frame in Fine-Gray format with weights, as
 returned by \code{\link[=add_fg_weights]{add_fg_weights()}}.}
 
+\item{covariate}{Character string. Name of the covariate column. Default is
+\code{"z1"}.}
+
 \item{extend}{Logical. If \code{FALSE}, data are truncated at the minimum of the
 stratum-specific maximum follow-up times before fitting. Default is \code{TRUE}.}
+
+\item{event1_level}{Character string. Factor level in the \code{delta} column
+representing the primary event. Default is \code{"event_1"}.}
 }
 \value{
 A matrix with one row per term and two columns: the log
@@ -19,7 +30,7 @@ sub-distribution hazard ratio and its robust standard error.
 }
 \description{
 Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-inverse of the probability of remaining uncensored after event_2
+inverse of the probability of remaining uncensored after the competing event
 (\code{p_notcens_after_death}), and uses a robust sandwich variance via
 \code{cluster(id)}.
 }
