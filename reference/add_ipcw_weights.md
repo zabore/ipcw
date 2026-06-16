@@ -3,12 +3,18 @@
 Estimates the probability of remaining uncensored and appends it as
 column `p_notcens` to the dataset. Supports two estimation strategies: a
 Cox proportional hazards model (`strat = "no"`) or non-parametric (KM)
-estimates within each level of `z1` (`strat = "yes"`).
+estimates within each level of the covariate (`strat = "yes"`).
 
 ## Usage
 
 ``` r
-add_ipcw_weights(data_long, strat = "no", new_data = NULL, by.start = TRUE)
+add_ipcw_weights(
+  data_long,
+  covariate = "z1",
+  strat = "no",
+  new_data = NULL,
+  by.start = TRUE
+)
 ```
 
 ## Arguments
@@ -17,13 +23,19 @@ add_ipcw_weights(data_long, strat = "no", new_data = NULL, by.start = TRUE)
 
   A data frame in long format, as returned by
   [`wide_to_long_CR()`](https://zabore.github.io/ipcw/reference/wide_to_long_CR.md).
-  Must contain columns `z1`, `tstart`, `tstop`, and `censor`.
+  Must contain columns `tstart`, `tstop`, `censor`, and the covariate
+  named by `covariate`.
+
+- covariate:
+
+  Character string. Name of the covariate column used to model the
+  censoring distribution. Default is `"z1"`.
 
 - strat:
 
   Character. `"no"` (default) fits a single Cox model for the censoring
-  distribution using `z1` as a covariate. `"yes"` estimates the
-  censoring distribution non-parametrically within each stratum of `z1`.
+  distribution using `covariate`. `"yes"` estimates the censoring
+  distribution non-parametrically within each stratum of `covariate`.
 
 - new_data:
 

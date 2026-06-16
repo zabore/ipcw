@@ -13,8 +13,7 @@ weighted Kaplan-Meier curves.
 - [`get_ipcw_cox_fit()`](https://zabore.github.io/ipcw/reference/get_ipcw_cox_fit.md)
   : Fit an IPCW-weighted Cox proportional hazards model
 - [`get_ipcw_km_prob_x()`](https://zabore.github.io/ipcw/reference/get_ipcw_km_prob_x.md)
-  : Estimate IPCW Kaplan-Meier survival probabilities by binary
-  covariate
+  : Estimate IPCW Kaplan-Meier survival probabilities by covariate
 - [`get_cox_fit()`](https://zabore.github.io/ipcw/reference/get_cox_fit.md)
   : Fit a standard (unweighted) Cox proportional hazards model
 - [`get_boot_var()`](https://zabore.github.io/ipcw/reference/get_boot_var.md)

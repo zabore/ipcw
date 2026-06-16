@@ -1,13 +1,18 @@
-# Estimate IPCW Kaplan-Meier survival probabilities by binary covariate
+# Estimate IPCW Kaplan-Meier survival probabilities by covariate
 
-Fits a weighted Kaplan-Meier estimator stratified by the binary
-covariate `x` and returns survival probabilities evaluated at a
+Fits a weighted Kaplan-Meier estimator stratified by the specified
+covariate and returns survival probabilities evaluated at a
 pre-specified set of times.
 
 ## Usage
 
 ``` r
-get_ipcw_km_prob_x(data, pre_times = seq(0, 50, 1))
+get_ipcw_km_prob_x(
+  data,
+  covariate = "x",
+  weight_var = "wgt",
+  pre_times = seq(0, 50, 1)
+)
 ```
 
 ## Arguments
@@ -15,8 +20,17 @@ get_ipcw_km_prob_x(data, pre_times = seq(0, 50, 1))
 - data:
 
   A data frame in long (counting-process) format with an IPCW weight
-  column `wgt`, as returned by
+  column, as returned by
   [`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md).
+
+- covariate:
+
+  Character string. Name of the stratification covariate column. Default
+  is `"x"`.
+
+- weight_var:
+
+  Character string. Name of the IPCW weight column. Default is `"wgt"`.
 
 - pre_times:
 
@@ -25,8 +39,8 @@ get_ipcw_km_prob_x(data, pre_times = seq(0, 50, 1))
 
 ## Value
 
-A tibble with columns `time`, `surv` (survival probability), and `x`
-(stratum).
+A tibble with columns `time`, `surv` (survival probability), and a
+column named after `covariate` containing the stratum labels.
 
 ## Examples
 

@@ -8,15 +8,29 @@ approach, without any IPCW adjustment. Serves as a comparison to
 ## Usage
 
 ``` r
-fg_naive(dat)
+fg_naive(dat, time_var = "t", event_var = "delta", covariate = "z1")
 ```
 
 ## Arguments
 
 - dat:
 
-  A wide-format competing risks data frame with columns `t`, `delta`,
-  and `z1`.
+  A wide-format competing risks data frame containing the columns
+  specified by `time_var`, `event_var`, and `covariate`.
+
+- time_var:
+
+  Character string. Name of the event/censoring time column. Default is
+  `"t"`.
+
+- event_var:
+
+  Character string. Name of the event indicator column. Default is
+  `"delta"`.
+
+- covariate:
+
+  Character string. Name of the covariate column. Default is `"z1"`.
 
 ## Value
 

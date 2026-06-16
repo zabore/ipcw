@@ -11,7 +11,8 @@ weights stored in the `p_notcens` column (as added by
 cuminc_ipcw(
   data_long,
   esttimes = seq(from = 0, to = 10, length.out = 100),
-  extend = TRUE
+  extend = TRUE,
+  covariate = "z1"
 )
 ```
 
@@ -34,6 +35,11 @@ cuminc_ipcw(
   Logical. If `FALSE`, estimates beyond the minimum of the
   stratum-specific maximum follow-up times are set to `NA`. Default is
   `TRUE`.
+
+- covariate:
+
+  Character string. Name of the covariate column, used only when
+  `extend = FALSE` to compute the truncation time. Default is `"z1"`.
 
 ## Value
 

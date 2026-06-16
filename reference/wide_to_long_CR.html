@@ -51,7 +51,14 @@ for the censoring distribution and for use with <code><a href="add_ipcw_weights.
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">wide_to_long_CR</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">wide_to_long_CR</span><span class="op">(</span></span>
+<span>  <span class="va">dat</span>,</span>
+<span>  time_var <span class="op">=</span> <span class="st">"t"</span>,</span>
+<span>  event_var <span class="op">=</span> <span class="st">"delta"</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="st">"z1"</span>,</span>
+<span>  cens_level <span class="op">=</span> <span class="st">"censor"</span>,</span>
+<span>  event2_level <span class="op">=</span> <span class="st">"event_2"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -59,15 +66,40 @@ for the censoring distribution and for use with <code><a href="add_ipcw_weights.
 
 
 <dl><dt id="arg-dat">dat<a class="anchor" aria-label="anchor" href="#arg-dat"></a></dt>
-<dd><p>A data frame with columns <code>t</code> (event/censoring time), <code>delta</code>
-(factor with levels <code>"censor"</code>, <code>"event_1"</code>, <code>"event_2"</code>), and <code>z1</code>
-(covariate). Typically the output of <code><a href="sim_data_CR.html">sim_data_CR()</a></code>.</p></dd>
+<dd><p>A wide-format competing risks data frame. Must contain the columns
+specified by <code>time_var</code>, <code>event_var</code>, and <code>covariate</code>.</p></dd>
+
+
+<dt id="arg-time-var">time_var<a class="anchor" aria-label="anchor" href="#arg-time-var"></a></dt>
+<dd><p>Character string. Name of the event/censoring time column.
+Default is <code>"t"</code>.</p></dd>
+
+
+<dt id="arg-event-var">event_var<a class="anchor" aria-label="anchor" href="#arg-event-var"></a></dt>
+<dd><p>Character string. Name of the event indicator column
+(factor with levels for censoring and the two event types). Default is
+<code>"delta"</code>.</p></dd>
+
+
+<dt id="arg-covariate">covariate<a class="anchor" aria-label="anchor" href="#arg-covariate"></a></dt>
+<dd><p>Character string. Name of the covariate column. Default is
+<code>"z1"</code>.</p></dd>
+
+
+<dt id="arg-cens-level">cens_level<a class="anchor" aria-label="anchor" href="#arg-cens-level"></a></dt>
+<dd><p>Character string. Factor level in <code>event_var</code> representing
+censoring. Default is <code>"censor"</code>.</p></dd>
+
+
+<dt id="arg-event-level">event2_level<a class="anchor" aria-label="anchor" href="#arg-event-level"></a></dt>
+<dd><p>Character string. Factor level in <code>event_var</code>
+representing the competing event (event type 2). Default is <code>"event_2"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame in long format with columns <code>id</code>, <code>z1</code>, <code>delta</code>,
-<code>censor</code>, <code>event2_time</code>, <code>tstart</code>, and <code>tstop</code>.</p>
+    <p>A data frame in long format with columns <code>id</code>, <code>delta</code>, <code>censor</code>,
+<code>event2_time</code>, <code>tstart</code>, <code>tstop</code>, and the covariate column.</p>
     </div>
 
     <div class="section level2">

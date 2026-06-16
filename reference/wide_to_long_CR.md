@@ -8,22 +8,51 @@ models for the censoring distribution and for use with
 ## Usage
 
 ``` r
-wide_to_long_CR(dat)
+wide_to_long_CR(
+  dat,
+  time_var = "t",
+  event_var = "delta",
+  covariate = "z1",
+  cens_level = "censor",
+  event2_level = "event_2"
+)
 ```
 
 ## Arguments
 
 - dat:
 
-  A data frame with columns `t` (event/censoring time), `delta` (factor
-  with levels `"censor"`, `"event_1"`, `"event_2"`), and `z1`
-  (covariate). Typically the output of
-  [`sim_data_CR()`](https://zabore.github.io/ipcw/reference/sim_data_CR.md).
+  A wide-format competing risks data frame. Must contain the columns
+  specified by `time_var`, `event_var`, and `covariate`.
+
+- time_var:
+
+  Character string. Name of the event/censoring time column. Default is
+  `"t"`.
+
+- event_var:
+
+  Character string. Name of the event indicator column (factor with
+  levels for censoring and the two event types). Default is `"delta"`.
+
+- covariate:
+
+  Character string. Name of the covariate column. Default is `"z1"`.
+
+- cens_level:
+
+  Character string. Factor level in `event_var` representing censoring.
+  Default is `"censor"`.
+
+- event2_level:
+
+  Character string. Factor level in `event_var` representing the
+  competing event (event type 2). Default is `"event_2"`.
 
 ## Value
 
-A data frame in long format with columns `id`, `z1`, `delta`, `censor`,
-`event2_time`, `tstart`, and `tstop`.
+A data frame in long format with columns `id`, `delta`, `censor`,
+`event2_time`, `tstart`, `tstop`, and the covariate column.
 
 ## Examples
 

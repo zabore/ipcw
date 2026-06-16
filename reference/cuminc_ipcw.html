@@ -54,7 +54,8 @@ the <code>p_notcens</code> column (as added by <code><a href="add_ipcw_weights.h
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cuminc_ipcw</span><span class="op">(</span></span>
 <span>  <span class="va">data_long</span>,</span>
 <span>  esttimes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span>from <span class="op">=</span> <span class="fl">0</span>, to <span class="op">=</span> <span class="fl">10</span>, length.out <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
-<span>  extend <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  extend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="st">"z1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -77,6 +78,11 @@ Defaults to 100 equally spaced points from 0 to 10.</p></dd>
 <dd><p>Logical. If <code>FALSE</code>, estimates beyond the minimum of the
 stratum-specific maximum follow-up times are set to <code>NA</code>. Default is
 <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-covariate">covariate<a class="anchor" aria-label="anchor" href="#arg-covariate"></a></dt>
+<dd><p>Character string. Name of the covariate column, used only
+when <code>extend = FALSE</code> to compute the truncation time. Default is <code>"z1"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

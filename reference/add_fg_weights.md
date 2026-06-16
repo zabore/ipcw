@@ -6,7 +6,7 @@ and appends it as column `p_notcens_after_death`.
 ## Usage
 
 ``` r
-add_fg_weights(data_long_fg, strat = "no")
+add_fg_weights(data_long_fg, covariate = "z1", strat = "no")
 ```
 
 ## Arguments
@@ -15,6 +15,10 @@ add_fg_weights(data_long_fg, strat = "no")
 
   A data frame in Fine-Gray format, as returned by
   [`fg_split()`](https://zabore.github.io/ipcw/reference/fg_split.md).
+
+- covariate:
+
+  Character string. Name of the covariate column. Default is `"z1"`.
 
 - strat:
 

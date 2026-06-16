@@ -7,19 +7,29 @@ comparison method when censoring is independent of covariates.
 ## Usage
 
 ``` r
-cuminc_naive(dat, esttimes)
+cuminc_naive(dat, esttimes, time_var = "t", event_var = "delta")
 ```
 
 ## Arguments
 
 - dat:
 
-  A wide-format competing risks data frame with columns `t` and `delta`
-  (factor with levels `"censor"`, `"event_1"`, `"event_2"`).
+  A wide-format competing risks data frame containing the columns
+  specified by `time_var` and `event_var`.
 
 - esttimes:
 
   Numeric vector of times at which to return estimates.
+
+- time_var:
+
+  Character string. Name of the event/censoring time column. Default is
+  `"t"`.
+
+- event_var:
+
+  Character string. Name of the event indicator column. Default is
+  `"delta"`.
 
 ## Value
 

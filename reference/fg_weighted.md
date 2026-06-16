@@ -1,14 +1,19 @@
 # IPCW-weighted Fine-Gray sub-distribution hazard regression
 
 Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-inverse of the probability of remaining uncensored after event_2
-(`p_notcens_after_death`), and uses a robust sandwich variance via
+inverse of the probability of remaining uncensored after the competing
+event (`p_notcens_after_death`), and uses a robust sandwich variance via
 `cluster(id)`.
 
 ## Usage
 
 ``` r
-fg_weighted(data_long_fg, extend = TRUE)
+fg_weighted(
+  data_long_fg,
+  covariate = "z1",
+  extend = TRUE,
+  event1_level = "event_1"
+)
 ```
 
 ## Arguments
@@ -18,11 +23,20 @@ fg_weighted(data_long_fg, extend = TRUE)
   A data frame in Fine-Gray format with weights, as returned by
   [`add_fg_weights()`](https://zabore.github.io/ipcw/reference/add_fg_weights.md).
 
+- covariate:
+
+  Character string. Name of the covariate column. Default is `"z1"`.
+
 - extend:
 
   Logical. If `FALSE`, data are truncated at the minimum of the
   stratum-specific maximum follow-up times before fitting. Default is
   `TRUE`.
+
+- event1_level:
+
+  Character string. Factor level in the `delta` column representing the
+  primary event. Default is `"event_1"`.
 
 ## Value
 
