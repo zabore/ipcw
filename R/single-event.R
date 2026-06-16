@@ -66,16 +66,20 @@ sim_data_SE <- function(n = 500, alpha = 0.05, x_prop = 0.5,
 #'
 #' Fits a Cox model for the censoring distribution and returns the original
 #' dataset in counting-process (long) format with an unstabilized IPCW weight
-#' column appended. The dataset must contain columns named `t` (event/censoring
-#' time), `delta` (event indicator, 1 = event), and `W2` (the covariate used to
-#' model the censoring distribution).
+#' column appended.
 #'
-#' @param data A data frame with columns `t`, `delta`, and `W2`, as produced by
-#'   the data-generation code in the package vignette.
+#' @param data A data frame containing the follow-up time, event indicator, and
+#'   censoring covariate columns.
+#' @param time_var Character string. Name of the observed follow-up time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column
+#'   (1 = event, 0 = censored). Default is `"delta"`.
+#' @param cens_cov Character string. Name of the covariate column used in the
+#'   Cox model for the censoring distribution. Default is `"W2"`.
 #'
 #' @return A data frame in long (counting-process) format with columns
-#'   `tstart`, `tstop`, `delta`, `id`, `wgt` (the unstabilized IPCW weight),
-#'   and all original columns.
+#'   `tstart`, `tstop`, `delta` (event indicator), `id`, `wgt` (the
+#'   unstabilized IPCW weight), and all original columns.
 #'
 #' @examples
 #' data(single_example_dat)
@@ -83,56 +87,44 @@ sim_data_SE <- function(n = 500, alpha = 0.05, x_prop = 0.5,
 #' head(dat_long)
 #'
 #' @importFrom survival survSplit coxph Surv
-#' @importFrom dplyr mutate arrange select rename full_join case_when row_number
+#' @importFrom dplyr mutate arrange select full_join case_when row_number
 #' @importFrom tibble add_column
 #' @importFrom stats predict
 #' @export
-get_ipcw_wgt <- function(data) {
+get_ipcw_wgt <- function(data, time_var = "t", event_var = "delta",
+                          cens_cov = "W2") {
+  times <- sort(unique(data[[time_var]][data[[event_var]] == 0]))
 
-  times <- sort(unique(data$t[data$delta == 0]))
-
-  dat_prep <-
-    data |>
+  dat_prep <- data |>
     mutate(
-      censor = 1 - delta,
+      censor = 1L - .data[[event_var]],
       tstart = 0,
-      id = row_number()
+      id     = row_number()
     )
 
-  dat_long1 <-
-    survSplit(
-      dat_prep,
-      cut = times,
-      end = "t",
-      start = "tstart",
-      event = "delta"
-    ) |>
-    arrange(id, t)
+  dat_long1 <- survSplit(dat_prep, cut = times, end = time_var,
+                         start = "tstart", event = event_var) |>
+    arrange(id, .data[[time_var]])
 
-  dat_long2 <-
-    survSplit(
-      dat_prep,
-      cut = times,
-      end = "t",
-      start = "tstart",
-      event = "censor"
-    ) |>
-    arrange(id, t)
+  dat_long2 <- survSplit(dat_prep, cut = times, end = time_var,
+                         start = "tstart", event = "censor") |>
+    arrange(id, .data[[time_var]])
 
-  dat_long0 <-
-    dat_long1 |>
+  dat_long0 <- dat_long1 |>
     select(-censor) |>
-    add_column(censor = dat_long2$censor) |>
-    rename(tstop = t)
+    add_column(censor = dat_long2$censor)
 
-  cens_mod <- coxph(Surv(tstart, tstop, censor) ~ W2,
-                    data = dat_long0, timefix = FALSE)
+  names(dat_long0)[names(dat_long0) == time_var] <- "tstop"
+  if (event_var != "delta")
+    names(dat_long0)[names(dat_long0) == event_var] <- "delta"
 
-  dat_long3 <-
-    dat_long0 |>
+  cens_formula <- as.formula(paste("Surv(tstart, tstop, censor) ~", cens_cov))
+  cens_mod <- coxph(cens_formula, data = dat_long0, timefix = FALSE)
+
+  dat_long3 <- dat_long0 |>
     mutate(
-      tstop = tstart,
-      tstart = 0,
+      tstop   = tstart,
+      tstart  = 0,
       inv_wgt = case_when(tstop == 0 ~ 1)
     )
 
@@ -145,7 +137,7 @@ get_ipcw_wgt <- function(data) {
 
   dat_long0 |>
     full_join(
-      dat_long3 |> select(id, tstop, wgt),
+      dat_long3[, c("id", "tstop", "wgt")],
       by = c("id", "tstart" = "tstop")
     )
 }
@@ -160,9 +152,12 @@ get_ipcw_wgt <- function(data) {
 #'
 #' @param data A data frame in long (counting-process) format, as returned by
 #'   [get_ipcw_wgt()]. Must contain columns `tstart`, `tstop`, `delta`, `id`,
-#'   and the weight column named by `weight`.
-#' @param weight A character string giving the name of the weight column in
-#'   `data`.
+#'   the covariate named by `covariate`, and the weight column named by
+#'   `weight`.
+#' @param covariate Character string. Name of the predictor covariate column.
+#'   Default is `"x"`.
+#' @param weight Character string. Name of the weight column. Default is
+#'   `"wgt"`.
 #'
 #' @return A data frame with one row per term containing:
 #'   \describe{
@@ -183,11 +178,12 @@ get_ipcw_wgt <- function(data) {
 #' @importFrom broom tidy
 #' @importFrom dplyr full_join rename
 #' @export
-get_ipcw_cox_fit <- function(data, weight) {
-  ipcw_cox_fit <- coxph(Surv(tstart, tstop, delta) ~ x + cluster(id),
-                        data = data,
-                        weights = data[[weight]],
-                        timefix = FALSE)
+get_ipcw_cox_fit <- function(data, covariate = "x", weight = "wgt") {
+  cox_formula <- as.formula(
+    paste("Surv(tstart, tstop, delta) ~", covariate, "+ cluster(id)")
+  )
+  ipcw_cox_fit <- coxph(cox_formula, data = data,
+                        weights = data[[weight]], timefix = FALSE)
   full_join(
     tidy(ipcw_cox_fit)[, 1:4] |>
       rename(log_hr = estimate, log_hr_se = std.error, log_hr_rob_se = robust.se),
@@ -198,18 +194,22 @@ get_ipcw_cox_fit <- function(data, weight) {
 }
 
 
-#' Estimate IPCW Kaplan-Meier survival probabilities by binary covariate
+#' Estimate IPCW Kaplan-Meier survival probabilities by covariate
 #'
-#' Fits a weighted Kaplan-Meier estimator stratified by the binary covariate `x`
+#' Fits a weighted Kaplan-Meier estimator stratified by the specified covariate
 #' and returns survival probabilities evaluated at a pre-specified set of times.
 #'
 #' @param data A data frame in long (counting-process) format with an IPCW
-#'   weight column `wgt`, as returned by [get_ipcw_wgt()].
+#'   weight column, as returned by [get_ipcw_wgt()].
+#' @param covariate Character string. Name of the stratification covariate
+#'   column. Default is `"x"`.
+#' @param weight_var Character string. Name of the IPCW weight column. Default
+#'   is `"wgt"`.
 #' @param pre_times Numeric vector of times at which to evaluate survival
 #'   probabilities. Defaults to `seq(0, 50, 1)`.
 #'
-#' @return A tibble with columns `time`, `surv` (survival probability), and
-#'   `x` (stratum).
+#' @return A tibble with columns `time`, `surv` (survival probability), and a
+#'   column named after `covariate` containing the stratum labels.
 #'
 #' @examples
 #' data(single_example_ipcw_dat)
@@ -218,26 +218,33 @@ get_ipcw_cox_fit <- function(data, weight) {
 #' @importFrom survival survfit Surv
 #' @importFrom tibble tibble
 #' @export
-get_ipcw_km_prob_x <- function(data, pre_times = seq(0, 50, 1)) {
-  ipcw_km_surv_fit <- survfit(Surv(tstart, tstop, delta) ~ x, data = data,
-                              weights = wgt, timefix = FALSE)
-  tibble(
-    time = summary(ipcw_km_surv_fit, times = pre_times)$time,
-    surv = summary(ipcw_km_surv_fit, times = pre_times)$surv,
-    x    = summary(ipcw_km_surv_fit, times = pre_times)$strata
+get_ipcw_km_prob_x <- function(data, covariate = "x", weight_var = "wgt",
+                                pre_times = seq(0, 50, 1)) {
+  km_formula <- as.formula(paste("Surv(tstart, tstop, delta) ~", covariate))
+  ipcw_km_surv_fit <- survfit(km_formula, data = data,
+                              weights = data[[weight_var]], timefix = FALSE)
+  result <- tibble(
+    time   = summary(ipcw_km_surv_fit, times = pre_times)$time,
+    surv   = summary(ipcw_km_surv_fit, times = pre_times)$surv,
+    strata = summary(ipcw_km_surv_fit, times = pre_times)$strata
   )
+  names(result)[3] <- covariate
+  result
 }
 
 
 #' Fit a standard (unweighted) Cox proportional hazards model
 #'
-#' Convenience wrapper around [survival::coxph()] for the covariate `x` using
-#' counting-process (`tstart`, `tstop`) time variables. Returns log-hazard
-#' ratio estimates with standard errors and the exponentiated hazard ratio with
-#' 95% confidence intervals.
+#' Convenience wrapper around [survival::coxph()] using counting-process
+#' (`tstart`, `tstop`) time variables. Returns log-hazard ratio estimates with
+#' standard errors and the exponentiated hazard ratio with 95% confidence
+#' intervals.
 #'
 #' @param data A data frame in long (counting-process) format containing
-#'   columns `tstart`, `tstop`, `delta`, and `x`.
+#'   columns `tstart`, `tstop`, `delta`, and the covariate named by
+#'   `covariate`.
+#' @param covariate Character string. Name of the predictor covariate column.
+#'   Default is `"x"`.
 #'
 #' @return A data frame with one row per term containing:
 #'   \describe{
@@ -257,9 +264,9 @@ get_ipcw_km_prob_x <- function(data, pre_times = seq(0, 50, 1)) {
 #' @importFrom broom tidy
 #' @importFrom dplyr full_join rename
 #' @export
-get_cox_fit <- function(data) {
-  cox_fit <- coxph(Surv(tstart, tstop, delta) ~ x, data = data,
-                   timefix = FALSE)
+get_cox_fit <- function(data, covariate = "x") {
+  cox_formula <- as.formula(paste("Surv(tstart, tstop, delta) ~", covariate))
+  cox_fit <- coxph(cox_formula, data = data, timefix = FALSE)
   full_join(
     tidy(cox_fit)[, 1:3] |> rename(log_hr = estimate, log_hr_se = std.error),
     tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE)[, c(1, 2, 6, 7)] |>

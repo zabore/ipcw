@@ -84,12 +84,22 @@ sim_data_CR <- function(n = 100, censoring = "none",
 #' per subject. The resulting long dataset is suitable for fitting Cox models
 #' for the censoring distribution and for use with [add_ipcw_weights()].
 #'
-#' @param dat A data frame with columns `t` (event/censoring time), `delta`
-#'   (factor with levels `"censor"`, `"event_1"`, `"event_2"`), and `z1`
-#'   (covariate). Typically the output of [sim_data_CR()].
+#' @param dat A wide-format competing risks data frame. Must contain the columns
+#'   specified by `time_var`, `event_var`, and `covariate`.
+#' @param time_var Character string. Name of the event/censoring time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column
+#'   (factor with levels for censoring and the two event types). Default is
+#'   `"delta"`.
+#' @param covariate Character string. Name of the covariate column. Default is
+#'   `"z1"`.
+#' @param cens_level Character string. Factor level in `event_var` representing
+#'   censoring. Default is `"censor"`.
+#' @param event2_level Character string. Factor level in `event_var`
+#'   representing the competing event (event type 2). Default is `"event_2"`.
 #'
-#' @return A data frame in long format with columns `id`, `z1`, `delta`,
-#'   `censor`, `event2_time`, `tstart`, and `tstop`.
+#' @return A data frame in long format with columns `id`, `delta`, `censor`,
+#'   `event2_time`, `tstart`, `tstop`, and the covariate column.
 #'
 #' @examples
 #' set.seed(42)
@@ -98,26 +108,32 @@ sim_data_CR <- function(n = 100, censoring = "none",
 #' head(dat_long)
 #'
 #' @importFrom survival survSplit Surv
-#' @importFrom dplyr rename
 #' @export
-wide_to_long_CR <- function(dat) {
+wide_to_long_CR <- function(dat, time_var = "t", event_var = "delta",
+                             covariate = "z1", cens_level = "censor",
+                             event2_level = "event_2") {
   dat$id          <- seq_len(nrow(dat))
-  dat$censor      <- (dat$delta == "censor")
-  dat$event2_time <- ifelse(dat$delta == "event_2", dat$t, NA)
+  dat$censor      <- (dat[[event_var]] == cens_level)
+  dat$event2_time <- ifelse(dat[[event_var]] == event2_level, dat[[time_var]], NA)
   dat$tstart      <- 0
 
-  times <- sort(unique(dat$t[dat$censor]))
+  times <- sort(unique(dat[[time_var]][dat$censor]))
 
-  data_long1 <- survSplit(dat, cut = times, end = "t", start = "tstart",
-                          event = "delta")
-  data_long1 <- data_long1[order(data_long1$id, data_long1$t), ]
+  data_long1 <- survSplit(dat, cut = times, end = time_var, start = "tstart",
+                          event = event_var)
+  data_long1 <- data_long1[order(data_long1$id, data_long1[[time_var]]), ]
 
-  data_long2 <- survSplit(dat, cut = times, end = "t", start = "tstart",
+  data_long2 <- survSplit(dat, cut = times, end = time_var, start = "tstart",
                           event = "censor")
-  data_long2 <- data_long2[order(data_long2$id, data_long2$t), ]
+  data_long2 <- data_long2[order(data_long2$id, data_long2[[time_var]]), ]
 
   data_long1$censor <- data_long2$censor
-  rename(data_long1, tstop = t)
+
+  names(data_long1)[names(data_long1) == time_var] <- "tstop"
+  if (event_var != "delta")
+    names(data_long1)[names(data_long1) == event_var] <- "delta"
+
+  data_long1
 }
 
 
@@ -126,14 +142,16 @@ wide_to_long_CR <- function(dat) {
 #' Estimates the probability of remaining uncensored and appends it as column
 #' `p_notcens` to the dataset. Supports two estimation strategies: a Cox
 #' proportional hazards model (`strat = "no"`) or non-parametric (KM) estimates
-#' within each level of `z1` (`strat = "yes"`).
+#' within each level of the covariate (`strat = "yes"`).
 #'
 #' @param data_long A data frame in long format, as returned by
-#'   [wide_to_long_CR()]. Must contain columns `z1`, `tstart`, `tstop`, and
-#'   `censor`.
+#'   [wide_to_long_CR()]. Must contain columns `tstart`, `tstop`, `censor`, and
+#'   the covariate named by `covariate`.
+#' @param covariate Character string. Name of the covariate column used to
+#'   model the censoring distribution. Default is `"z1"`.
 #' @param strat Character. `"no"` (default) fits a single Cox model for the
-#'   censoring distribution using `z1` as a covariate. `"yes"` estimates
-#'   the censoring distribution non-parametrically within each stratum of `z1`.
+#'   censoring distribution using `covariate`. `"yes"` estimates the censoring
+#'   distribution non-parametrically within each stratum of `covariate`.
 #' @param new_data Optional data frame to which weights are applied. If `NULL`
 #'   (default), weights are computed for `data_long` itself.
 #' @param by.start Logical. If `TRUE` (default), the weight is
@@ -153,11 +171,11 @@ wide_to_long_CR <- function(dat) {
 #' @importFrom survival coxph survfit Surv
 #' @importFrom stats predict
 #' @export
-add_ipcw_weights <- function(data_long, strat = "no", new_data = NULL,
-                             by.start = TRUE) {
+add_ipcw_weights <- function(data_long, covariate = "z1", strat = "no",
+                              new_data = NULL, by.start = TRUE) {
   if (is.null(new_data)) new_data <- data_long
 
-  temp <- new_data[, c("z1", "tstart", "tstop", "censor")]
+  temp <- new_data[, c(covariate, "tstart", "tstop", "censor")]
   if (by.start) {
     temp$tstop  <- temp$tstart
     temp$tstart <- 0
@@ -165,13 +183,14 @@ add_ipcw_weights <- function(data_long, strat = "no", new_data = NULL,
   temp$p_notcens <- NA
 
   if (strat == "yes") {
-    cens_mod <- lapply(levels(data_long$z1), function(x) {
+    cov_levels <- levels(data_long[[covariate]])
+    cens_mod <- lapply(cov_levels, function(lv) {
       survfit(Surv(tstart, tstop, censor) ~ 1,
-              data = data_long[data_long$z1 == x, ], timefix = FALSE)
+              data = data_long[data_long[[covariate]] == lv, ], timefix = FALSE)
     })
-    for (i in seq_along(levels(data_long$z1))) {
-      lv  <- levels(data_long$z1)[i]
-      idx <- temp$z1 == lv
+    for (i in seq_along(cov_levels)) {
+      lv  <- cov_levels[i]
+      idx <- temp[[covariate]] == lv
       temp$p_notcens[idx] <-
         summary(cens_mod[[i]], temp$tstop[idx],  extend = TRUE)$surv /
         summary(cens_mod[[i]], temp$tstart[idx], extend = TRUE)$surv
@@ -179,8 +198,8 @@ add_ipcw_weights <- function(data_long, strat = "no", new_data = NULL,
   }
 
   if (strat == "no") {
-    cens_mod <- coxph(Surv(tstart, tstop, censor) ~ z1,
-                      data = data_long, timefix = FALSE)
+    cens_formula <- as.formula(paste("Surv(tstart, tstop, censor) ~", covariate))
+    cens_mod <- coxph(cens_formula, data = data_long, timefix = FALSE)
     temp$p_notcens[temp$tstop == 0] <- 1
     temp$p_notcens[is.na(temp$p_notcens)] <-
       exp(-predict(cens_mod,
@@ -199,9 +218,13 @@ add_ipcw_weights <- function(data_long, strat = "no", new_data = NULL,
 #' Aalen-Johansen estimator without any IPCW adjustment. Serves as a
 #' comparison method when censoring is independent of covariates.
 #'
-#' @param dat A wide-format competing risks data frame with columns `t` and
-#'   `delta` (factor with levels `"censor"`, `"event_1"`, `"event_2"`).
+#' @param dat A wide-format competing risks data frame containing the columns
+#'   specified by `time_var` and `event_var`.
 #' @param esttimes Numeric vector of times at which to return estimates.
+#' @param time_var Character string. Name of the event/censoring time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column.
+#'   Default is `"delta"`.
 #'
 #' @return A numeric vector of cumulative incidence estimates at `esttimes`.
 #'
@@ -212,8 +235,11 @@ add_ipcw_weights <- function(data_long, strat = "no", new_data = NULL,
 #'
 #' @importFrom survival survfit Surv
 #' @export
-cuminc_naive <- function(dat, esttimes) {
-  fit <- survfit(Surv(t, delta) ~ 1, data = dat)
+cuminc_naive <- function(dat, esttimes, time_var = "t", event_var = "delta") {
+  naive_formula <- as.formula(
+    paste0("Surv(", time_var, ", ", event_var, ") ~ 1")
+  )
+  fit <- survfit(naive_formula, data = dat)
   est <- summary(fit, times = esttimes, extend = TRUE)
   est$pstate[, 2]
 }
@@ -222,14 +248,19 @@ cuminc_naive <- function(dat, esttimes) {
 #' Weighted-average (non-parametric) IPCW cumulative incidence estimate
 #'
 #' Estimates the marginal cumulative incidence of event type 1 by computing
-#' stratum-specific Aalen-Johansen estimates (stratified by `z1`) and then
-#' combining them with sample-proportion weights. This is the non-parametric
-#' IPCW approach.
+#' stratum-specific Aalen-Johansen estimates and then combining them with
+#' sample-proportion weights. This is the non-parametric IPCW approach.
 #'
-#' @param dat A wide-format competing risks data frame with columns `t`,
-#'   `delta`, and `z1`.
+#' @param dat A wide-format competing risks data frame containing the columns
+#'   specified by `time_var`, `event_var`, and `covariate`.
 #' @param esttimes Numeric vector of times at which to return estimates.
 #'   Defaults to 100 equally spaced points from 0 to 10.
+#' @param time_var Character string. Name of the event/censoring time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column.
+#'   Default is `"delta"`.
+#' @param covariate Character string. Name of the stratification covariate
+#'   column. Default is `"z1"`.
 #'
 #' @return A numeric vector of weighted-average cumulative incidence estimates
 #'   at `esttimes`. Values beyond the minimum of the stratum-specific maximum
@@ -243,19 +274,26 @@ cuminc_naive <- function(dat, esttimes) {
 #' @importFrom survival strata survfit Surv
 #' @export
 cuminc_waverage <- function(dat,
-                            esttimes = seq(from = 0, to = 10, length.out = 100)) {
-  strat  <- survfit(Surv(t, delta) ~ strata(z1), data = dat)
-  est    <- summary(strat, times = esttimes, extend = TRUE)
-  pstate <- matrix(est$pstate[, 2], nrow = length(esttimes), ncol = 4)
-  n      <- nrow(dat)
-  weighted <- (pstate[, 1] * sum(dat$z1 == 0) +
-               pstate[, 2] * sum(dat$z1 == 1) +
-               pstate[, 3] * sum(dat$z1 == 2) +
-               pstate[, 4] * sum(dat$z1 == 3)) / n
-  tau <- min(max(dat$t[dat$z1 == 0]),
-             max(dat$t[dat$z1 == 1]),
-             max(dat$t[dat$z1 == 2]),
-             max(dat$t[dat$z1 == 3]))
+                             esttimes = seq(from = 0, to = 10, length.out = 100),
+                             time_var = "t", event_var = "delta",
+                             covariate = "z1") {
+  wavg_formula <- as.formula(paste0(
+    "Surv(", time_var, ", ", event_var, ") ~ strata(", covariate, ")"
+  ))
+  strat_fit  <- survfit(wavg_formula, data = dat)
+  est        <- summary(strat_fit, times = esttimes, extend = TRUE)
+  cov_levels <- levels(dat[[covariate]])
+  n_levels   <- length(cov_levels)
+  pstate     <- matrix(est$pstate[, 2], nrow = length(esttimes), ncol = n_levels)
+  n          <- nrow(dat)
+  weighted   <- rowSums(
+    sapply(seq_along(cov_levels), function(i) {
+      pstate[, i] * sum(dat[[covariate]] == cov_levels[i])
+    })
+  ) / n
+  tau <- min(sapply(cov_levels, function(lv) {
+    max(dat[[time_var]][dat[[covariate]] == lv])
+  }))
   weighted[esttimes >= tau] <- NA
   weighted
 }
@@ -275,6 +313,8 @@ cuminc_waverage <- function(dat,
 #' @param extend Logical. If `FALSE`, estimates beyond the minimum of the
 #'   stratum-specific maximum follow-up times are set to `NA`. Default is
 #'   `TRUE`.
+#' @param covariate Character string. Name of the covariate column, used only
+#'   when `extend = FALSE` to compute the truncation time. Default is `"z1"`.
 #'
 #' @return A numeric vector of IPCW cumulative incidence estimates at
 #'   `esttimes`.
@@ -289,18 +329,18 @@ cuminc_waverage <- function(dat,
 #' @importFrom survival survfit Surv
 #' @export
 cuminc_ipcw <- function(data_long,
-                        esttimes = seq(from = 0, to = 10, length.out = 100),
-                        extend = TRUE) {
+                         esttimes = seq(from = 0, to = 10, length.out = 100),
+                         extend = TRUE, covariate = "z1") {
   fit  <- survfit(Surv(tstart, tstop, delta) ~ 1,
                   data = data_long, weights = 1 / p_notcens,
                   id = id, timefix = FALSE)
   ipcw <- summary(fit, times = esttimes, extend = TRUE)
 
   if (!extend) {
-    tau <- min(max(data_long$tstop[data_long$z1 == 0]),
-               max(data_long$tstop[data_long$z1 == 1]),
-               max(data_long$tstop[data_long$z1 == 2]),
-               max(data_long$tstop[data_long$z1 == 3]))
+    cov_levels <- levels(data_long[[covariate]])
+    tau <- min(sapply(cov_levels, function(lv) {
+      max(data_long$tstop[data_long[[covariate]] == lv])
+    }))
     ipcw$pstate[, 2][esttimes >= tau] <- NA
   }
   ipcw$pstate[, 2]
@@ -309,14 +349,18 @@ cuminc_ipcw <- function(data_long,
 
 #' Prepare long-format data for Fine-Gray weighted regression
 #'
-#' After a type-2 event (event_2), subjects are artificially re-entered into
-#' the risk set (as in the Fine-Gray sub-distribution hazard model). This
-#' function appends those additional rows, split at every censoring time.
+#' After a type-2 event, subjects are artificially re-entered into the risk set
+#' (as in the Fine-Gray sub-distribution hazard model). This function appends
+#' those additional rows, split at every censoring time.
 #'
 #' @param data_long A long-format data frame, as returned by [wide_to_long_CR()].
+#' @param covariate Character string. Name of the covariate column. Default is
+#'   `"z1"`.
+#' @param event2_level Character string. Factor level in the `delta` column
+#'   representing the competing event. Default is `"event_2"`.
 #'
 #' @return A data frame in Fine-Gray format, with additional rows for subjects
-#'   who experienced event_2, sorted by `id` and `tstart`.
+#'   who experienced the competing event, sorted by `id` and `tstart`.
 #'
 #' @examples
 #' set.seed(42)
@@ -325,13 +369,12 @@ cuminc_ipcw <- function(data_long,
 #' dat_long_fg <- fg_split(dat_long)
 #' nrow(dat_long_fg) > nrow(dat_long)
 #'
-#' @importFrom dplyr select
 #' @export
-fg_split <- function(data_long) {
+fg_split <- function(data_long, covariate = "z1", event2_level = "event_2") {
   times <- sort(unique(data_long$tstop[data_long$censor == 1]))
 
-  event2_dat <- data_long[data_long$delta == "event_2", ] |>
-    select(id, z1, event2_time)
+  event2_dat <- data_long[data_long$delta == event2_level,
+                           c("id", covariate, "event2_time")]
   cens_dat <- data.frame(
     tstart = c(0, times),
     tstop  = c(times, Inf),
@@ -355,6 +398,8 @@ fg_split <- function(data_long) {
 #'
 #' @param data_long_fg A data frame in Fine-Gray format, as returned by
 #'   [fg_split()].
+#' @param covariate Character string. Name of the covariate column. Default is
+#'   `"z1"`.
 #' @param strat Character. Passed to [add_ipcw_weights()]. `"no"` (default)
 #'   uses a Cox model; `"yes"` uses stratum-specific KM estimates.
 #'
@@ -369,13 +414,13 @@ fg_split <- function(data_long) {
 #' summary(dat_long_fg$p_notcens_after_death)
 #'
 #' @export
-add_fg_weights <- function(data_long_fg, strat = "no") {
+add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
   temp <- data.frame(
     tstart = data_long_fg$event2_time,
     tstop  = data_long_fg$tstart,
-    censor = NA,
-    z1     = data_long_fg$z1
+    censor = NA
   )
+  temp[[covariate]] <- data_long_fg[[covariate]]
   temp$p_notcens_after_death <- NA
   temp$p_notcens_after_death[is.na(temp$tstart)] <- 1
   temp$p_notcens_after_death[!is.na(temp$tstart) & temp$tstart >= temp$tstop] <- 1
@@ -385,7 +430,7 @@ add_fg_weights <- function(data_long_fg, strat = "no") {
     ref_data <- data_long_fg[data_long_fg$tstart < data_long_fg$event2_time |
                                is.na(data_long_fg$event2_time), ]
     temp$p_notcens_after_death[still_na] <-
-      add_ipcw_weights(ref_data, strat = strat,
+      add_ipcw_weights(ref_data, covariate = covariate, strat = strat,
                        new_data = temp[still_na, ],
                        by.start = FALSE)$p_notcens
   }
@@ -400,8 +445,14 @@ add_fg_weights <- function(data_long_fg, strat = "no") {
 #' Fits a Fine-Gray model using the standard [survival::finegray()] approach,
 #' without any IPCW adjustment. Serves as a comparison to [fg_weighted()].
 #'
-#' @param dat A wide-format competing risks data frame with columns `t`,
-#'   `delta`, and `z1`.
+#' @param dat A wide-format competing risks data frame containing the columns
+#'   specified by `time_var`, `event_var`, and `covariate`.
+#' @param time_var Character string. Name of the event/censoring time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column.
+#'   Default is `"delta"`.
+#' @param covariate Character string. Name of the covariate column. Default is
+#'   `"z1"`.
 #'
 #' @return A matrix with one row per term and two columns: the log
 #'   sub-distribution hazard ratio and its standard error.
@@ -413,10 +464,14 @@ add_fg_weights <- function(data_long_fg, strat = "no") {
 #'
 #' @importFrom survival finegray coxph Surv
 #' @export
-fg_naive <- function(dat) {
-  pdata <- finegray(Surv(t, delta) ~ ., data = dat, timefix = FALSE)
-  m1 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ z1,
-              weights = fgwt, data = pdata, timefix = FALSE)
+fg_naive <- function(dat, time_var = "t", event_var = "delta",
+                     covariate = "z1") {
+  fg_formula  <- as.formula(paste0("Surv(", time_var, ", ", event_var, ") ~ ."))
+  pdata <- finegray(fg_formula, data = dat, timefix = FALSE)
+  m1 <- coxph(
+    as.formula(paste("Surv(fgstart, fgstop, fgstatus) ~", covariate)),
+    weights = fgwt, data = pdata, timefix = FALSE
+  )
   summary(m1)$coef[, c(1, 3)]
 }
 
@@ -424,14 +479,18 @@ fg_naive <- function(dat) {
 #' IPCW-weighted Fine-Gray sub-distribution hazard regression
 #'
 #' Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-#' inverse of the probability of remaining uncensored after event_2
+#' inverse of the probability of remaining uncensored after the competing event
 #' (`p_notcens_after_death`), and uses a robust sandwich variance via
 #' `cluster(id)`.
 #'
 #' @param data_long_fg A data frame in Fine-Gray format with weights, as
 #'   returned by [add_fg_weights()].
+#' @param covariate Character string. Name of the covariate column. Default is
+#'   `"z1"`.
 #' @param extend Logical. If `FALSE`, data are truncated at the minimum of the
 #'   stratum-specific maximum follow-up times before fitting. Default is `TRUE`.
+#' @param event1_level Character string. Factor level in the `delta` column
+#'   representing the primary event. Default is `"event_1"`.
 #'
 #' @return A matrix with one row per term and two columns: the log
 #'   sub-distribution hazard ratio and its robust standard error.
@@ -446,22 +505,28 @@ fg_naive <- function(dat) {
 #'
 #' @importFrom survival coxph Surv
 #' @export
-fg_weighted <- function(data_long_fg, extend = TRUE) {
+fg_weighted <- function(data_long_fg, covariate = "z1", extend = TRUE,
+                         event1_level = "event_1") {
   if (!extend) {
+    cov_levels <- levels(data_long_fg[[covariate]])
     tau <- min(
-      vapply(0:3, function(lv) {
-        idx <- data_long_fg$z1 == lv &
+      vapply(cov_levels, function(lv) {
+        idx <- data_long_fg[[covariate]] == lv &
           (is.na(data_long_fg$event2_time) |
              data_long_fg$tstop <= data_long_fg$event2_time)
         max(data_long_fg$tstop[idx])
       }, numeric(1))
     )
-    data_long_fg$delta[data_long_fg$tstop > tau]  <- "censor"
-    data_long_fg$tstop[data_long_fg$tstop > tau]  <- tau
+    data_long_fg$delta[data_long_fg$tstop > tau] <- "censor"
+    data_long_fg$tstop[data_long_fg$tstop > tau] <- tau
     data_long_fg <- data_long_fg[data_long_fg$tstop > data_long_fg$tstart, ]
   }
+  fg_formula <- as.formula(sprintf(
+    'Surv(tstart, tstop, delta == "%s") ~ %s + cluster(id)',
+    event1_level, covariate
+  ))
   m1 <- coxph(
-    Surv(tstart, tstop, delta == "event_1") ~ z1 + cluster(id),
+    fg_formula,
     weights = p_notcens_after_death,
     data    = data_long_fg[data_long_fg$p_notcens_after_death > 0, ],
     timefix = FALSE
