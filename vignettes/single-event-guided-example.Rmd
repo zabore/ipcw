@@ -84,68 +84,20 @@ ggsurvfit(km_fit) +
 ```
 
 ```{r}
-B <- 500
+plot_base <- 
+  plot_ipcw_km_boot_ci(
+    data = dat, B = 500, pre_times = seq(0, 2429, 1),
+    covariate = "x", time_var = "t",
+    event_var = "delta", cens_cov = "W2", weight_var = "wgt",
+    seed = 20240917)
 
-set.seed(20240917)
-
-ipcw_boot_dat <- 
-  map(
-    1:B,
-    ~ slice_sample(dat, prop = 1, replace = T)
-  ) |> 
-  map(~ get_ipcw_wgt(.))
-
-# Fit the IPCW K-M curves to the bootstrapped data
-ipcw_km_boot_fit <- 
-  ipcw_boot_dat |> 
-  map(~get_ipcw_km_prob_x(., pre_times = seq(0, 2429, 1)))
-
-# Collapse into a single dataframe
-ipcw_km_boot_fit_all <- 
-  ipcw_km_boot_fit |>  
-  map_dfr(bind_rows, .id = "sim_num")
-
-# Then summarize at each time for each treatment
-# And get the 2.5 and 97.5 percentiles
-ipcw_km_ci_summ <-
-  ipcw_km_boot_fit_all |> 
-  group_by(time, x) |> 
-  summarize(
-    lpci_surv = quantile(surv, probs = 0.025),
-    upci_surv = quantile(surv, probs = 0.975),
-    median_surv = median(surv),
-    mean_surv = mean(surv)
-  )
-
-# Add in the original point estimates based on the single dataset
-point_orig <- summary(
-  survfit2(Surv(tstart, tstop, delta) ~ x, 
-           data = dat_long, weights = wgt, timefix = FALSE) ,
-  times = seq(0, 2429, 1)
-  )
-
-point_orig_df <- 
-  tibble(
-    x = point_orig$strata,
-    time = point_orig$time,
-    surv = point_orig$surv
-  ) |> 
-  mutate(
-    x = as.factor(x)
-  )
-
-ipcw_km_ci_summ_orig <- 
-  ipcw_km_ci_summ |> 
-  full_join(point_orig_df)
-
-ggplot(ipcw_km_ci_summ_orig, aes(x = time, color = x, fill = x)) +
-  geom_step(aes(y = surv)) +
-  geom_ribbon(aes(ymin = lpci_surv, ymax = upci_surv), 
-              alpha = 0.3, linetype = "dashed") +
-  labs(x = "Time", y = "Survival Probability") +
-  theme_minimal() + 
+plot_base +
   xlim(c(0, 1000)) +
+  scale_color_discrete(labels = c("Chemotherapy", "TKI")) +
+  scale_fill_discrete(labels = c("Chemotherapy", "TKI")) +
   labs(
+    color = "",
+    fill = "",
     x = "Days from treatment start",
     y = "Progression-free survival probability"
   ) +

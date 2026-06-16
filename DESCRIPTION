@@ -24,11 +24,11 @@ Depends:
 Imports:
     broom,
     dplyr,
+    ggplot2,
     rlang,
     survival,
     tibble
 Suggests:
-    ggplot2,
     ggsurvfit,
     gt,
     knitr,

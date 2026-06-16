@@ -41,7 +41,7 @@
 #'
 #' @examples
 #' set.seed(20240429)
-#' dat <- sim_data_SE(n = 500)
+#' dat <- sim_data_se(n = 500)
 #' table(dat$delta)
 #' summary(dat$t)
 #'
@@ -90,7 +90,7 @@ sim_data_se <- function(n = 500, alpha = 0.05, x_prop = 0.5,
 #'
 #' @examples
 #' set.seed(20240429)
-#' dat <- sim_data_SE(n = 500)
+#' dat <- sim_data_se(n = 500)
 #' dat_long <- get_ipcw_wgt(single_example_dat)
 #' head(dat_long)
 #'
@@ -189,7 +189,7 @@ get_ipcw_wgt <- function(data, time_var = "t", event_var = "delta",
 #'
 #' @examples
 #' set.seed(20240429)
-#' dat <- sim_data_SE(n = 500)
+#' dat <- sim_data_se(n = 500)
 #' get_ipcw_km_prob_x(dat, pre_times = seq(0, 2429, 1))
 #'
 #' @importFrom survival survfit Surv
@@ -352,4 +352,83 @@ get_boot_var <- function(data, B) {
 #' @export
 get_boot_pci <- function(data) {
   quantile(data$log_hr, c(0.025, 0.975))
+}
+
+
+#' Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence intervals
+#'
+#' Draws bootstrap samples from the original wide-format data, fits IPCW
+#' weights and a weighted Kaplan-Meier estimator on each sample, and combines
+#' the bootstrap survival curves with the point estimates from the original
+#' data to produce a survival plot with bootstrap-based 95% percentile 
+#' confidence intervals.
+#'
+#' @param data A wide-format data frame as produced by [sim_data_se()] or
+#'   equivalent, containing the columns specified by `time_var`, `event_var`,
+#'   `cens_cov`, and `covariate`.
+#' @param B Integer. Number of bootstrap samples. Default is `500`.
+#' @param pre_times Numeric vector of times at which to evaluate survival
+#'   probabilities. Default is `seq(0, 50, 1)`.
+#' @param covariate Character string. Name of the stratification covariate
+#'   column. Default is `"x"`.
+#' @param time_var Character string. Name of the observed follow-up time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column
+#'   (1 = event, 0 = censored). Default is `"delta"`.
+#' @param cens_cov Character string. Name of the covariate column used to model
+#'   the censoring distribution. Default is `"W2"`.
+#' @param weight_var Character string. Name of the IPCW weight column produced
+#'   by [get_ipcw_wgt()]. Default is `"wgt"`.
+#' @param seed Optional integer seed for reproducibility. Default is `NULL`.
+#'
+#' @return A [ggplot2::ggplot()] object. Add layers or themes to customise.
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(1)
+#' dat <- sim_data_se(n = 200)
+#' plot_ipcw_km_boot_ci(dat, B = 50, pre_times = seq(0, 500, 10))
+#' }
+#'
+#' @importFrom ggplot2 ggplot aes geom_step geom_ribbon labs theme_minimal
+#' @importFrom dplyr bind_rows group_by across all_of summarise left_join
+#' @importFrom stats quantile set.seed
+#' @export
+plot_ipcw_km_boot_ci <- function(data, B = 500, pre_times = seq(0, 50, 1),
+                                  covariate = "x", time_var = "t",
+                                  event_var = "delta", cens_cov = "W2",
+                                  weight_var = "wgt", seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  boot_results <- lapply(seq_len(B), function(i) {
+    boot_dat  <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
+    long_dat  <- get_ipcw_wgt(boot_dat, time_var = time_var,
+                               event_var = event_var, cens_cov = cens_cov)
+    get_ipcw_km_prob_x(long_dat, covariate = covariate,
+                        weight_var = weight_var, pre_times = pre_times)
+  })
+
+  ci_summ <- bind_rows(boot_results) |>
+    group_by(across(all_of(c("time", covariate)))) |>
+    summarise(
+      lpci = quantile(surv, 0.025),
+      upci = quantile(surv, 0.975),
+      .groups = "drop"
+    )
+
+  orig_long <- get_ipcw_wgt(data, time_var = time_var,
+                              event_var = event_var, cens_cov = cens_cov)
+  orig_est  <- get_ipcw_km_prob_x(orig_long, covariate = covariate,
+                                   weight_var = weight_var,
+                                   pre_times = pre_times)
+
+  plot_dat <- left_join(orig_est, ci_summ, by = c("time", covariate))
+
+  ggplot(plot_dat, aes(x = time,
+                       color = .data[[covariate]],
+                       fill  = .data[[covariate]])) +
+    geom_ribbon(aes(ymin = lpci, ymax = upci), alpha = 0.2, linetype = "blank") +
+    geom_step(aes(y = surv)) +
+    labs(x = "Time", y = "Survival Probability") +
+    theme_minimal()
 }
