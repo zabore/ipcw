@@ -3,12 +3,18 @@
 #' Generates a dataset where event times follow a Weibull distribution
 #' parameterized by a binary treatment covariate `x`, and censoring depends
 #' on an ancillary biomarker `W2` through a shared gamma frailty, inducing
-#' informative censoring. This is the data-generating mechanism used in the
+#' informative censoring using Clayton's copula. 
+#' This is the data-generating mechanism used in the
 #' single-event guided example.
 #'
 #' @param n Integer. Number of subjects to simulate. Default is 500.
-#' @param alpha Numeric. Shape parameter for the gamma frailty distribution,
-#'   also used as the Pareto exponent for `W1` and `W2`. Default is `0.05`.
+#' @param alpha Numeric. Shape parameter for the gamma frailty distribution, 
+#' which has a fixed rate of 1. Here, $\alpha$ denotes the level of dependence 
+#' between the survival time and the covariate that drives censoring. 
+#' A smaller $\alpha$ leads to a stronger dependence. 
+#' This parameter is also related to Kendall's correlation coefficient, 
+#' $\tau$, such that $\tau = (1/\alpha)/(1/\alpha + 2)$.
+#' Default is `0.05`.
 #' @param x_prop Numeric in (0, 1). Probability of treatment (`x = 1`).
 #'   Default is `0.5`.
 #' @param a Numeric. Weibull shape parameter for the event time distribution.
@@ -17,10 +23,11 @@
 #'   distribution. Default is `500`.
 #' @param beta Numeric. Log hazard ratio for the treatment effect on event
 #'   time. Default is `log(0.25)`.
-#' @param lambda Numeric. Baseline censoring rate. Default is `0.01`.
-#' @param phi Numeric. Effect of `W2` on the censoring rate (log scale).
-#'   Negative values mean higher `W2` leads to a lower censoring rate
-#'   (i.e., longer follow-up for high-`W2` subjects). Default is `-5`.
+#' @param lambda Numeric. Baseline censoring rate when W2=0. Default is `0.01`.
+#' @param phi Numeric. The log hazard ratio for the association between a 
+#' one-unit increase in `W2` and censoring time. Negative values mean higher 
+#' `W2` leads to a lower censoring rate 
+#' (i.e., longer follow-up for high-`W2` subjects). Default is `-5`.
 #'
 #' @return A data frame with columns:
 #'   \describe{
@@ -40,7 +47,7 @@
 #'
 #' @importFrom stats rbinom rexp rgamma
 #' @export
-sim_data_SE <- function(n = 500, alpha = 0.05, x_prop = 0.5,
+sim_data_se <- function(n = 500, alpha = 0.05, x_prop = 0.5,
                         a = 2, sigma = 500, beta = log(0.25),
                         lambda = 0.01, phi = -5) {
   Y1 <- rexp(n, rate = 1)
@@ -82,7 +89,8 @@ sim_data_SE <- function(n = 500, alpha = 0.05, x_prop = 0.5,
 #'   unstabilized IPCW weight), and all original columns.
 #'
 #' @examples
-#' data(single_example_dat)
+#' set.seed(20240429)
+#' dat <- sim_data_SE(n = 500)
 #' dat_long <- get_ipcw_wgt(single_example_dat)
 #' head(dat_long)
 #'
@@ -95,36 +103,51 @@ get_ipcw_wgt <- function(data, time_var = "t", event_var = "delta",
                           cens_cov = "W2") {
   times <- sort(unique(data[[time_var]][data[[event_var]] == 0]))
 
-  dat_prep <- data |>
+  dat_prep <- 
+    data |>
     mutate(
       censor = 1L - .data[[event_var]],
       tstart = 0,
       id     = row_number()
     )
 
-  dat_long1 <- survSplit(dat_prep, cut = times, end = time_var,
-                         start = "tstart", event = event_var) |>
+  dat_long1 <- 
+    survSplit(
+      dat_prep, 
+      cut = times, 
+      end = time_var,
+      start = "tstart", 
+      event = event_var) |>
     arrange(id, .data[[time_var]])
 
-  dat_long2 <- survSplit(dat_prep, cut = times, end = time_var,
-                         start = "tstart", event = "censor") |>
+  dat_long2 <- 
+    survSplit(
+      dat_prep, 
+      cut = times, 
+      end = time_var,
+      start = "tstart", 
+      event = "censor") |>
     arrange(id, .data[[time_var]])
 
-  dat_long0 <- dat_long1 |>
+  dat_long0 <- 
+    dat_long1 |>
     select(-censor) |>
     add_column(censor = dat_long2$censor)
 
   names(dat_long0)[names(dat_long0) == time_var] <- "tstop"
+  
   if (event_var != "delta")
     names(dat_long0)[names(dat_long0) == event_var] <- "delta"
 
   cens_formula <- as.formula(paste("Surv(tstart, tstop, censor) ~", cens_cov))
+  
   cens_mod <- coxph(cens_formula, data = dat_long0, timefix = FALSE)
 
-  dat_long3 <- dat_long0 |>
+  dat_long3 <- 
+    dat_long0 |>
     mutate(
-      tstop   = tstart,
-      tstart  = 0,
+      tstop = tstart,
+      tstart = 0,
       inv_wgt = case_when(tstop == 0 ~ 1)
     )
 
@@ -141,6 +164,58 @@ get_ipcw_wgt <- function(data, time_var = "t", event_var = "delta",
       by = c("id", "tstart" = "tstop")
     )
 }
+
+
+#' Estimate IPCW Kaplan-Meier survival probabilities by covariate
+#'
+#' Fits a weighted Kaplan-Meier estimator stratified by the specified covariate
+#' and returns survival probabilities evaluated at a pre-specified set of times.
+#'
+#' @param data A data frame in long (counting-process) format with an IPCW
+#'   weight column, as returned by [get_ipcw_wgt()]. Must contain time columns
+#'   named `tstart` and `tstop` for the counting process time intervals.
+#' @param covariate Character string. Name of the stratification covariate
+#'   column. Default is `"x"`.
+#' @param weight_var Character string. Name of the IPCW weight column. Default
+#'   is `"wgt"`.
+#' @param event_var Character string. Name of the event indicator column
+#'   (1 = event, 0 = censored). Default is `"delta"`.
+#' @param pre_times Numeric vector of times at which to evaluate survival
+#'   probabilities. Defaults to `seq(0, 50, 1)`. Choose the second number
+#'   to cover the entire range of times observed in `data`
+#'
+#' @return A tibble with columns `time`, `surv` (survival probability), and a
+#'   column named after `covariate` containing the stratum labels.
+#'
+#' @examples
+#' set.seed(20240429)
+#' dat <- sim_data_SE(n = 500)
+#' get_ipcw_km_prob_x(dat, pre_times = seq(0, 2429, 1))
+#'
+#' @importFrom survival survfit Surv
+#' @importFrom tibble tibble
+#' @export
+get_ipcw_km_prob_x <- function(data, covariate = "x", weight_var = "wgt", 
+                               event_var = "delta",
+                               pre_times = seq(0, 50, 1)) {
+  km_formula <- as.formula(
+    paste("Surv(tstart, tstop,", event_var, ") ~", covariate)
+    )
+  
+  ipcw_km_surv_fit <- survfit(km_formula, data = data,
+                              weights = data[[weight_var]], 
+                              timefix = FALSE)
+  
+  result <- tibble(
+    time   = summary(ipcw_km_surv_fit, times = pre_times)$time,
+    surv   = summary(ipcw_km_surv_fit, times = pre_times)$surv,
+    strata = summary(ipcw_km_surv_fit, times = pre_times)$strata
+  )
+  names(result)[3] <- covariate
+  result
+}
+
+
 
 
 #' Fit an IPCW-weighted Cox proportional hazards model
@@ -194,43 +269,7 @@ get_ipcw_cox_fit <- function(data, covariate = "x", weight = "wgt") {
 }
 
 
-#' Estimate IPCW Kaplan-Meier survival probabilities by covariate
-#'
-#' Fits a weighted Kaplan-Meier estimator stratified by the specified covariate
-#' and returns survival probabilities evaluated at a pre-specified set of times.
-#'
-#' @param data A data frame in long (counting-process) format with an IPCW
-#'   weight column, as returned by [get_ipcw_wgt()].
-#' @param covariate Character string. Name of the stratification covariate
-#'   column. Default is `"x"`.
-#' @param weight_var Character string. Name of the IPCW weight column. Default
-#'   is `"wgt"`.
-#' @param pre_times Numeric vector of times at which to evaluate survival
-#'   probabilities. Defaults to `seq(0, 50, 1)`.
-#'
-#' @return A tibble with columns `time`, `surv` (survival probability), and a
-#'   column named after `covariate` containing the stratum labels.
-#'
-#' @examples
-#' data(single_example_ipcw_dat)
-#' get_ipcw_km_prob_x(single_example_ipcw_dat, pre_times = seq(0, 500, 10))
-#'
-#' @importFrom survival survfit Surv
-#' @importFrom tibble tibble
-#' @export
-get_ipcw_km_prob_x <- function(data, covariate = "x", weight_var = "wgt",
-                                pre_times = seq(0, 50, 1)) {
-  km_formula <- as.formula(paste("Surv(tstart, tstop, delta) ~", covariate))
-  ipcw_km_surv_fit <- survfit(km_formula, data = data,
-                              weights = data[[weight_var]], timefix = FALSE)
-  result <- tibble(
-    time   = summary(ipcw_km_surv_fit, times = pre_times)$time,
-    surv   = summary(ipcw_km_surv_fit, times = pre_times)$surv,
-    strata = summary(ipcw_km_surv_fit, times = pre_times)$strata
-  )
-  names(result)[3] <- covariate
-  result
-}
+
 
 
 #' Fit a standard (unweighted) Cox proportional hazards model

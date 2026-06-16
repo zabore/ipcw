@@ -18,9 +18,16 @@ has_gt        <- requireNamespace("gt",        quietly = TRUE)
 
 This vignette demonstrates inverse probability of censoring weighting (IPCW)
 for a single-event survival outcome. We use a simulated dataset that mimics a
-clinical trial comparing two treatments (chemotherapy vs. TKI) on
-progression-free survival, where censoring is informative because it depends
-on an ancillary biomarker (`W2`).
+clinical trial of patients with chronic myeloid leukemia. The primary endpoint 
+is progression-free survival (PFS). Participants are randomized to receive 
+either chemotherapy or a tyrosine kinase inhibitor (TKI). Participants can be 
+censored for the primary endpoint due to treatment intolerance or excessive
+toxicity, which is expected to occur equally for the two treatment groups.
+Treatment group is the factor of interest in this study. Dependent
+censoring arises because participants with higher absoluate neutrophil count 
+(ANC) at baseline are less likely to go off study due to treatment intolerance,
+and therefore to be censored for PFS, and are also less likely to experience a
+progression or die.
 
 ## Setup
 
@@ -30,81 +37,44 @@ library(survival)
 library(purrr)
 ```
 
-## Data
+## Simulate data and compute IPCW weights
 
-The package ships with `single_example_dat`, a simulated dataset of 500
-subjects generated with `set.seed(20240429)`. The key variables are:
+First, create a simulated dataset of `n=500` patients using the `sim_data_se()` function. Key parameters include:
 
 - `t`: observed time (event or censoring)
 - `delta`: event indicator (1 = event, 0 = censored)
 - `x`: treatment (0 = chemotherapy, 1 = TKI)
-- `W2`: ancillary biomarker that drives informative censoring
+- `W2`: ancillary biomarker that drives informative censoring (ANC)
 
-```{r load-data}
-data(single_example_dat)
-head(single_example_dat)
-```
-
-The code below re-creates this dataset from scratch, so you can see exactly
-how it was generated.
-
-```{r generate-data, eval = FALSE}
-# Fix simulation parameters
-n       <- 500
-alpha   <- 0.05
-x_prop  <- 0.5
-a       <- 2
-sigma   <- 500
-beta    <- log(0.25)
-lambda  <- 0.01
-phi     <- -5
-
+```{r generate_data}
 set.seed(20240429)
-
-Y1 <- rexp(n, rate = 1)
-Y2 <- rexp(n, rate = 1)
-Z  <- rgamma(n, shape = alpha, rate = 1)
-W1 <- (1 + Y1 / Z)^(-alpha)
-W2 <- (1 + Y2 / Z)^(-alpha)
-x  <- rbinom(n, 1, prob = x_prop)
-
-S     <- sigma * (-log(1 - W1) / exp(beta * x))^(1 / a)
-C     <- rexp(n, rate = lambda * exp(phi * W2))
-t     <- pmin(S, C)
-delta <- as.integer(S <= C)
-
-single_example_dat <- tibble::tibble(S, t, delta, x, W2)
+dat <- sim_data_se(n = 500)
 ```
-
-## Prepare data and compute IPCW weights
 
 `get_ipcw_wgt()` converts the wide dataset to counting-process (long) format
-and appends the unstabilized IPCW weight column `wgt`. The package also
-provides `single_example_ipcw_dat` with these weights pre-computed.
+and appends the unstabilized IPCW weight column `wgt`. 
 
-```{r load-ipcw-data}
-data(single_example_ipcw_dat)
-head(single_example_ipcw_dat)
-```
-
-Alternatively, compute the weights directly:
-
-```{r compute-weights-live, eval = FALSE}
-dat_long <- get_ipcw_wgt(single_example_dat)
+```{r compute-weights-live}
+dat_long <- get_ipcw_wgt(dat)
 ```
 
 ## IPCW Kaplan-Meier curves
 
-The chunk below requires the **ggsurvfit** package. If it is not installed,
-you can plot the IPCW K-M curves with base R instead (see the commented code).
+The chunk below requires the **ggsurvfit** package. Install it from CRAN if it 
+is not already installed. We plot the IPCW Kaplan-Meier estimates.
 
-```{r km-plot, eval = has_ggsurvfit, fig.width = 6, fig.height = 4}
+```{r km-plot, fig.width = 6, fig.height = 4}
+# install.packages("ggsurvfit")
 library(ggsurvfit)
-km_fit2 <- survfit2(Surv(tstart, tstop, delta) ~ x,
-                    data    = single_example_ipcw_dat,
-                    weights = single_example_ipcw_dat$wgt,
-                    timefix = FALSE)
-ggsurvfit(km_fit2) +
+
+km_fit <- 
+  survfit2(
+    Surv(tstart, tstop, delta) ~ x,
+    data = dat_long,
+    weights = wgt,
+    timefix = FALSE)
+
+ggsurvfit(km_fit) +
   xlim(c(0, 1000)) +
   scale_color_hue(labels = c("Chemotherapy", "TKI")) +
   labs(
@@ -113,16 +83,79 @@ ggsurvfit(km_fit2) +
   )
 ```
 
-```{r km-plot-base, eval = !has_ggsurvfit, fig.width = 6, fig.height = 4}
-km_fit <- survfit(Surv(tstart, tstop, delta) ~ x,
-                  data    = single_example_ipcw_dat,
-                  weights = wgt,
-                  timefix = FALSE)
-plot(km_fit, col = 1:2, xlim = c(0, 1000),
-     xlab = "Days from treatment start",
-     ylab = "Progression-free survival probability")
-legend("topright", legend = c("Chemotherapy", "TKI"), col = 1:2, lty = 1)
+```{r}
+B <- 500
+
+set.seed(20240917)
+
+ipcw_boot_dat <- 
+  map(
+    1:B,
+    ~ slice_sample(dat, prop = 1, replace = T)
+  ) |> 
+  map(~ get_ipcw_wgt(.))
+
+# Fit the IPCW K-M curves to the bootstrapped data
+ipcw_km_boot_fit <- 
+  ipcw_boot_dat |> 
+  map(~get_ipcw_km_prob_x(., pre_times = seq(0, 2429, 1)))
+
+# Collapse into a single dataframe
+ipcw_km_boot_fit_all <- 
+  ipcw_km_boot_fit |>  
+  map_dfr(bind_rows, .id = "sim_num")
+
+# Then summarize at each time for each treatment
+# And get the 2.5 and 97.5 percentiles
+ipcw_km_ci_summ <-
+  ipcw_km_boot_fit_all |> 
+  group_by(time, x) |> 
+  summarize(
+    lpci_surv = quantile(surv, probs = 0.025),
+    upci_surv = quantile(surv, probs = 0.975),
+    median_surv = median(surv),
+    mean_surv = mean(surv)
+  )
+
+# Add in the original point estimates based on the single dataset
+point_orig <- summary(
+  survfit2(Surv(tstart, tstop, delta) ~ x, 
+           data = dat_long, weights = wgt, timefix = FALSE) ,
+  times = seq(0, 2429, 1)
+  )
+
+point_orig_df <- 
+  tibble(
+    x = point_orig$strata,
+    time = point_orig$time,
+    surv = point_orig$surv
+  ) |> 
+  mutate(
+    x = as.factor(x)
+  )
+
+ipcw_km_ci_summ_orig <- 
+  ipcw_km_ci_summ |> 
+  full_join(point_orig_df)
+
+ggplot(ipcw_km_ci_summ_orig, aes(x = time, color = x, fill = x)) +
+  geom_step(aes(y = surv)) +
+  geom_ribbon(aes(ymin = lpci_surv, ymax = upci_surv), 
+              alpha = 0.3, linetype = "dashed") +
+  labs(x = "Time", y = "Survival Probability") +
+  theme_minimal() + 
+  xlim(c(0, 1000)) +
+  labs(
+    x = "Days from treatment start",
+    y = "Progression-free survival probability"
+  ) +
+  theme(legend.position = "bottom",
+        axis.text = element_text(size = 6),
+        axis.title = element_text(size = 6),
+        legend.text = element_text(size = 6))
 ```
+
+
 
 ## IPCW Cox regression
 

@@ -46,7 +46,7 @@ reference:
       including data simulation, weight estimation, weighted Cox
       regression, and weighted Kaplan-Meier curves.
     contents:
-      - sim_data_SE
+      - sim_data_se
       - get_ipcw_wgt
       - get_ipcw_cox_fit
       - get_ipcw_km_prob_x
@@ -69,8 +69,3 @@ reference:
       - add_fg_weights
       - fg_naive
       - fg_weighted
-  - title: "Data"
-    desc: "Example datasets included with the package."
-    contents:
-      - single_example_dat
-      - single_example_ipcw_dat
