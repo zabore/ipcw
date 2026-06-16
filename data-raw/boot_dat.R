@@ -1,5 +1,4 @@
 ## code to prepare `boot_dat` dataset goes here
-
 set.seed(20240429)
 dat <- sim_data_se(n = 500)
 

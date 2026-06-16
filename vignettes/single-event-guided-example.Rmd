@@ -87,13 +87,21 @@ To get an appropriate variance estimate, we need to account for the fact that
 the IPCW are estimated from the data. We do this using bootstrapping and produce 
 a Kaplan-Meier plot with bootstrap-based pointwise confidence intervals. First, 
 generate the bootstrapped datasets with weights using the function 
-`get_ipcw_boot()`. Then, create the plot with the `plot_ipcw_km_boot_ci()` 
-function. Note that depending on the size of the data and the number of 
+`get_ipcw_boot()`. Note that depending on the size of the data and the number of 
 bootstrap samples, the bootstrapping step can take some time to run. 
-The bootstrapped data for this guided example is included in the package,
-so we do not execute the code below.
 
-```{r boot-plot eval = FALSE}
+```{r boot-dat, eval = FALSE}
+get_ipcw_boot <- function(data, B = 500, time_var = "t", event_var = "delta",
+                           cens_cov = "W2", seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  lapply(seq_len(B), function(i) {
+    boot_dat <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
+    get_ipcw_wgt(boot_dat, time_var = time_var, event_var = event_var,
+                  cens_cov = cens_cov)
+  })
+}
+
 boot_dat <- 
   get_ipcw_boot(
     data = dat, 
@@ -104,22 +112,18 @@ boot_dat <-
     seed = 20240917)
 ```
 
-```{r eval = FALSE, include = FALSE}
+Then, create the plot with the `plot_ipcw_km_boot_ci()` function. This too can 
+take some time due to the large size of the boostrapped data and the calculation of the pointwise confidence intervals, so the below code is not executed here.
+
+```{r boot-plot, eval = FALSE}
 plot_base <-
   plot_ipcw_km_boot_ci(
     boot_data = boot_dat, 
-    orig_data = dat, 
+    orig_data = dat_long, 
     pre_times = seq(0, 2429, 1),
     covariate = "x",
     weight_var = "wgt",
     event_var = "delta")
-  
-plot_base <- 
-  plot_ipcw_km_boot_ci(
-    data = dat, B = 500, pre_times = seq(0, 2429, 1),
-    covariate = "x", time_var = "t",
-    event_var = "delta", cens_cov = "W2", weight_var = "wgt",
-    seed = 20240917)
 
 plot_base +
   xlim(c(0, 1000)) +
@@ -137,50 +141,60 @@ plot_base +
         legend.text = element_text(size = 6))
 ```
 
+```{r boot-plot-save, include = FALSE, eval = FALSE}
+ggsave("vignettes/ipcw_km_boot_ci.png", width = 6, height = 4, dpi = 150)
+```
+
+```{r boot-plot-show, echo = FALSE}
+knitr::include_graphics("ipcw_km_boot_ci.png")
+```
 
 ## IPCW Cox regression
 
+Estimate the hazard ratio (HR) for the association between treatment group and PFS, accounting for the dependent censoring. 
+
+Use the convenience wrapper `get_ipcw_cox_fit()` to obtain a tibble of results from the weighted Cox regression model.
+
 ```{r cox-fit}
-ipcw_cox_fit <- coxph(
-  Surv(tstart, tstop, delta) ~ x + cluster(id),
-  data    = single_example_ipcw_dat,
-  weights = single_example_ipcw_dat$wgt,
-  timefix = FALSE
-)
-summary(ipcw_cox_fit)$coef
+cox_fit <- get_ipcw_cox_fit(dat_long, weight = "wgt")
+
+cox_fit
 ```
 
-Or use the convenience wrapper, which also returns the hazard ratio and
-robust-SE-based confidence interval:
+Then we fit the Cox model to each of the bootstrap datasets and extract the 
+log(HR) from each model fit. These will be used to construct bootstrap percentile intervals. Because this process takes some time, the resulting object 
+`cox_boot_lhr` is included in this package.
 
-```{r cox-fit-wrapper}
-get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
+```{r cox-boot-fit, eval = FALSE}
+# Fit the Cox model to the B bootstrap samples
+cox_boot_fit <-
+  boot_dat |>
+  map(~ get_ipcw_cox_fit(., covariate = "x", weight = "wgt"))
+
+# Extract the B log HRs 
+cox_boot_lhr <- 
+  map_dbl(cox_boot_fit, "log_hr")
 ```
 
-## Bootstrap percentile confidence intervals
+```{r echo = FALSE}
+data(cox_boot_lhr)
+```
 
-Bootstrap resampling is needed for valid confidence intervals because the
-weights are estimated. The code below runs 500 bootstrap samples; in practice
-you may want to run this in parallel.
+Use the function `get_boot_pci()` on a dataframe of the log(HR)s to obtain the bootstrap-based 95% confidence interval.
 
-```{r bootstrap, eval = FALSE}
-set.seed(20240917)
-B <- 500
+```{r cox-pci}
+# Calculate the bootstrap percentile interval
+boot_pci <- get_boot_pci(data.frame(log_hr = cox_boot_lhr))
+```
 
-ipcw_boot_dat <- map(1:B, ~ dplyr::slice_sample(single_example_dat,
-                                                  prop = 1, replace = TRUE))
-ipcw_boot_dat <- map(ipcw_boot_dat, get_ipcw_wgt)
 
-ipcw_cox_boot <- map(ipcw_boot_dat, ~ get_ipcw_cox_fit(., "wgt"))
-boot_log_hrs  <- map_dbl(ipcw_cox_boot, "log_hr")
-
-boot_pci <- get_boot_pci(data.frame(log_hr = boot_log_hrs))
-
+```{r boot-res}
 result_tab <- data.frame(
-  Scale          = c("log(HR)", "HR"),
-  Estimate       = c(coef(ipcw_cox_fit), exp(coef(ipcw_cox_fit))),
-  Lower_95pct_PI = c(boot_pci[[1]], exp(boot_pci[[1]])),
-  Upper_95pct_PI = c(boot_pci[[2]], exp(boot_pci[[2]]))
+  Scale = c("log(HR)", "HR"),
+  Estimate = round(c(cox_fit$log_hr, exp(cox_fit$log_hr)), 2),
+  Lower_95pct_PI = round(c(boot_pci[[1]], exp(boot_pci[[1]])), 2),
+  Upper_95pct_PI = round(c(boot_pci[[2]], exp(boot_pci[[2]])), 2)
 )
-print(round(result_tab[, -1], 2))
+
+result_tab
 ```

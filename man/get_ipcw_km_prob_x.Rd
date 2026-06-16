@@ -8,12 +8,14 @@ get_ipcw_km_prob_x(
   data,
   covariate = "x",
   weight_var = "wgt",
+  event_var = "delta",
   pre_times = seq(0, 50, 1)
 )
 }
 \arguments{
 \item{data}{A data frame in long (counting-process) format with an IPCW
-weight column, as returned by \code{\link[=get_ipcw_wgt]{get_ipcw_wgt()}}.}
+weight column, as returned by \code{\link[=get_ipcw_wgt]{get_ipcw_wgt()}}. Must contain time columns
+named \code{tstart} and \code{tstop} for the counting process time intervals.}
 
 \item{covariate}{Character string. Name of the stratification covariate
 column. Default is \code{"x"}.}
@@ -21,8 +23,12 @@ column. Default is \code{"x"}.}
 \item{weight_var}{Character string. Name of the IPCW weight column. Default
 is \code{"wgt"}.}
 
+\item{event_var}{Character string. Name of the event indicator column
+(1 = event, 0 = censored). Default is \code{"delta"}.}
+
 \item{pre_times}{Numeric vector of times at which to evaluate survival
-probabilities. Defaults to \code{seq(0, 50, 1)}.}
+probabilities. Defaults to \code{seq(0, 50, 1)}. Choose the second number
+to cover the entire range of times observed in \code{data}}
 }
 \value{
 A tibble with columns \code{time}, \code{surv} (survival probability), and a
@@ -33,7 +39,8 @@ Fits a weighted Kaplan-Meier estimator stratified by the specified covariate
 and returns survival probabilities evaluated at a pre-specified set of times.
 }
 \examples{
-data(single_example_ipcw_dat)
-get_ipcw_km_prob_x(single_example_ipcw_dat, pre_times = seq(0, 500, 10))
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+get_ipcw_km_prob_x(dat, pre_times = seq(0, 2429, 1))
 
 }

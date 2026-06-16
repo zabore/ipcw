@@ -30,7 +30,8 @@ dataset in counting-process (long) format with an unstabilized IPCW weight
 column appended.
 }
 \examples{
-data(single_example_dat)
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
 dat_long <- get_ipcw_wgt(single_example_dat)
 head(dat_long)
 

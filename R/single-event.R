@@ -436,8 +436,11 @@ plot_ipcw_km_boot_ci <- function(boot_data, orig_data, pre_times = seq(0, 50, 1)
                                   covariate = "x", weight_var = "wgt",
                                   event_var = "delta") {
   boot_results <- lapply(boot_data, function(long_dat) {
-    get_ipcw_km_prob_x(long_dat, covariate = covariate,
-                        weight_var = weight_var, pre_times = pre_times)
+    get_ipcw_km_prob_x(
+      long_dat, 
+      covariate = covariate,
+      weight_var = weight_var, 
+      pre_times = pre_times)
   })
 
   ci_summ <- bind_rows(boot_results) |>
