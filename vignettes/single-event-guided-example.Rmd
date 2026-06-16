@@ -83,7 +83,37 @@ ggsurvfit(km_fit) +
   )
 ```
 
-```{r}
+To get an appropriate variance estimate, we need to account for the fact that 
+the IPCW are estimated from the data. We do this using bootstrapping and produce 
+a Kaplan-Meier plot with bootstrap-based pointwise confidence intervals. First, 
+generate the bootstrapped datasets with weights using the function 
+`get_ipcw_boot()`. Then, create the plot with the `plot_ipcw_km_boot_ci()` 
+function. Note that depending on the size of the data and the number of 
+bootstrap samples, the bootstrapping step can take some time to run. 
+The bootstrapped data for this guided example is included in the package,
+so we do not execute the code below.
+
+```{r boot-plot eval = FALSE}
+boot_dat <- 
+  get_ipcw_boot(
+    data = dat, 
+    B = 500, 
+    time_var = "t", 
+    event_var = "delta",
+    cens_cov = "W2", 
+    seed = 20240917)
+```
+
+```{r eval = FALSE, include = FALSE}
+plot_base <-
+  plot_ipcw_km_boot_ci(
+    boot_data = boot_dat, 
+    orig_data = dat, 
+    pre_times = seq(0, 2429, 1),
+    covariate = "x",
+    weight_var = "wgt",
+    event_var = "delta")
+  
 plot_base <- 
   plot_ipcw_km_boot_ci(
     data = dat, B = 500, pre_times = seq(0, 2429, 1),
@@ -106,7 +136,6 @@ plot_base +
         axis.title = element_text(size = 6),
         legend.text = element_text(size = 6))
 ```
-
 
 
 ## IPCW Cox regression

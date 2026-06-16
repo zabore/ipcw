@@ -355,55 +355,87 @@ get_boot_pci <- function(data) {
 }
 
 
-#' Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence intervals
+#' Bootstrap IPCW weighted data for single-event survival analysis
 #'
-#' Draws bootstrap samples from the original wide-format data, fits IPCW
-#' weights and a weighted Kaplan-Meier estimator on each sample, and combines
-#' the bootstrap survival curves with the point estimates from the original
-#' data to produce a survival plot with bootstrap-based 95% percentile 
-#' confidence intervals.
+#' Draws `B` bootstrap samples from the original wide-format data, fits IPCW
+#' weights to each sample via [get_ipcw_wgt()], and returns the results as a
+#' list of long-format data frames. The list can be passed to
+#' [plot_ipcw_km_boot_ci()] for plotting or used directly to bootstrap other
+#' quantities (e.g. Cox hazard ratios via [get_ipcw_cox_fit()]).
 #'
-#' @param data A wide-format data frame as produced by [sim_data_se()] or
-#'   equivalent, containing the columns specified by `time_var`, `event_var`,
-#'   `cens_cov`, and `covariate`.
+#' @param data A wide-format data frame containing the columns specified by
+#'   `time_var`, `event_var`, and `cens_cov`.
 #' @param B Integer. Number of bootstrap samples. Default is `500`.
-#' @param pre_times Numeric vector of times at which to evaluate survival
-#'   probabilities. Default is `seq(0, 50, 1)`.
-#' @param covariate Character string. Name of the stratification covariate
-#'   column. Default is `"x"`.
 #' @param time_var Character string. Name of the observed follow-up time column.
 #'   Default is `"t"`.
 #' @param event_var Character string. Name of the event indicator column
 #'   (1 = event, 0 = censored). Default is `"delta"`.
 #' @param cens_cov Character string. Name of the covariate column used to model
 #'   the censoring distribution. Default is `"W2"`.
-#' @param weight_var Character string. Name of the IPCW weight column produced
-#'   by [get_ipcw_wgt()]. Default is `"wgt"`.
 #' @param seed Optional integer seed for reproducibility. Default is `NULL`.
+#'
+#' @return A list of `B` data frames, each in long (counting-process) format
+#'   as returned by [get_ipcw_wgt()].
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(1)
+#' dat <- sim_data_SE(n = 200)
+#' boot_list <- get_ipcw_boot(dat, B = 50)
+#' }
+#'
+#' @export
+get_ipcw_boot <- function(data, B = 500, time_var = "t", event_var = "delta",
+                           cens_cov = "W2", seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  lapply(seq_len(B), function(i) {
+    boot_dat <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
+    get_ipcw_wgt(boot_dat, time_var = time_var, event_var = event_var,
+                  cens_cov = cens_cov)
+  })
+}
+
+
+#' Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence intervals
+#'
+#' Combines bootstrap survival curves from [get_ipcw_boot()] with point
+#' estimates from the original IPCW-weighted data to produce a Kaplan-Meier
+#' plot with 95% percentile confidence intervals.
+#'
+#' @param boot_data A list of long-format data frames as returned by
+#'   [get_ipcw_boot()].
+#' @param orig_data A single long-format data frame for the original
+#'   (non-bootstrapped) dataset, as returned by [get_ipcw_wgt()]. Used for
+#'   the point estimates.
+#' @param pre_times Numeric vector of times at which to evaluate survival
+#'   probabilities. Default is `seq(0, 50, 1)`.
+#' @param covariate Character string. Name of the stratification covariate
+#'   column. Default is `"x"`.
+#' @param weight_var Character string. Name of the IPCW weight column. Default
+#'   is `"wgt"`.
+#' @param event_var Character string. Name of the event indicator column in
+#'   the long-format data. Default is `"delta"`.
 #'
 #' @return A [ggplot2::ggplot()] object. Add layers or themes to customise.
 #'
 #' @examples
 #' \dontrun{
 #' set.seed(1)
-#' dat <- sim_data_se(n = 200)
-#' plot_ipcw_km_boot_ci(dat, B = 50, pre_times = seq(0, 500, 10))
+#' dat      <- sim_data_SE(n = 200)
+#' dat_long <- get_ipcw_wgt(dat)
+#' boot_list <- get_ipcw_boot(dat, B = 50)
+#' plot_ipcw_km_boot_ci(boot_list, dat_long, pre_times = seq(0, 500, 10))
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_step geom_ribbon labs theme_minimal
 #' @importFrom dplyr bind_rows group_by across all_of summarise left_join
-#' @importFrom stats quantile set.seed
+#' @importFrom stats quantile
 #' @export
-plot_ipcw_km_boot_ci <- function(data, B = 500, pre_times = seq(0, 50, 1),
-                                  covariate = "x", time_var = "t",
-                                  event_var = "delta", cens_cov = "W2",
-                                  weight_var = "wgt", seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-
-  boot_results <- lapply(seq_len(B), function(i) {
-    boot_dat  <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
-    long_dat  <- get_ipcw_wgt(boot_dat, time_var = time_var,
-                               event_var = event_var, cens_cov = cens_cov)
+plot_ipcw_km_boot_ci <- function(boot_data, orig_data, pre_times = seq(0, 50, 1),
+                                  covariate = "x", weight_var = "wgt",
+                                  event_var = "delta") {
+  boot_results <- lapply(boot_data, function(long_dat) {
     get_ipcw_km_prob_x(long_dat, covariate = covariate,
                         weight_var = weight_var, pre_times = pre_times)
   })
@@ -416,9 +448,7 @@ plot_ipcw_km_boot_ci <- function(data, B = 500, pre_times = seq(0, 50, 1),
       .groups = "drop"
     )
 
-  orig_long <- get_ipcw_wgt(data, time_var = time_var,
-                              event_var = event_var, cens_cov = cens_cov)
-  orig_est  <- get_ipcw_km_prob_x(orig_long, covariate = covariate,
+  orig_est <- get_ipcw_km_prob_x(orig_data, covariate = covariate,
                                    weight_var = weight_var,
                                    pre_times = pre_times)
 
