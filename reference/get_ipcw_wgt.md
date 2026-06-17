@@ -41,8 +41,9 @@ weight), and all original columns.
 ## Examples
 
 ``` r
-data(single_example_dat)
-dat_long <- get_ipcw_wgt(single_example_dat)
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+dat_long <- get_ipcw_wgt(dat)
 head(dat_long)
 #>          S x        W2 id    tstart     tstop delta censor      wgt
 #> 1 426.7239 0 0.5326369  1 0.0000000 0.6883977     0      0 1.000000

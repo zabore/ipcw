@@ -21,7 +21,7 @@ fg_weighted(
 - data_long_fg:
 
   A data frame in Fine-Gray format with weights, as returned by
-  [`add_fg_weights()`](https://zabore.github.io/ipcw/reference/add_fg_weights.md).
+  [`add_fg_weights()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights.md).
 
 - covariate:
 
@@ -47,8 +47,8 @@ hazard ratio and its robust standard error.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
-dat_long    <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat_long    <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split(dat_long)
 dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 #> Warning: Loglik converged before variable  3 ; beta may be infinite. 

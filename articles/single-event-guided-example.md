@@ -2,9 +2,17 @@
 
 This vignette demonstrates inverse probability of censoring weighting
 (IPCW) for a single-event survival outcome. We use a simulated dataset
-that mimics a clinical trial comparing two treatments (chemotherapy
-vs. TKI) on progression-free survival, where censoring is informative
-because it depends on an ancillary biomarker (`W2`).
+that mimics a clinical trial of patients with chronic myeloid leukemia.
+The primary endpoint is progression-free survival (PFS). Participants
+are randomized to receive either chemotherapy or a tyrosine kinase
+inhibitor (TKI). Participants can be censored for the primary endpoint
+due to treatment intolerance or excessive toxicity, which is expected to
+occur equally for the two treatment groups. Treatment group is the
+factor of interest in this study. Dependent censoring arises because
+participants with higher absoluate neutrophil count (ANC) at baseline
+are less likely to go off study due to treatment intolerance, and
+therefore to be censored for PFS, and are also less likely to experience
+a progression or die.
 
 ## Setup
 
@@ -15,183 +23,178 @@ library(survival)
 library(purrr)
 ```
 
-## Data
+## Simulate data and compute IPCW weights
 
-The package ships with `single_example_dat`, a simulated dataset of 500
-subjects generated with `set.seed(20240429)`. The key variables are:
+First, create a simulated dataset of `n=500` patients using the
+[`sim_data_se()`](https://www.emilyzabor.com/ipcw/reference/sim_data_se.md)
+function. Key parameters include:
 
 - `t`: observed time (event or censoring)
 - `delta`: event indicator (1 = event, 0 = censored)
 - `x`: treatment (0 = chemotherapy, 1 = TKI)
-- `W2`: ancillary biomarker that drives informative censoring
+- `W2`: ancillary biomarker that drives informative censoring (ANC)
 
 ``` r
-
-data(single_example_dat)
-head(single_example_dat)
-#> # A tibble: 6 × 5
-#>       S      t delta     x     W2
-#>   <dbl>  <dbl> <dbl> <int>  <dbl>
-#> 1  427.  427.      1     0 0.533 
-#> 2 1541. 1541.      1     1 0.986 
-#> 3  417.  417.      1     0 0.579 
-#> 4 1095.  327.      0     1 0.701 
-#> 5  108.   51.5     0     0 0.0469
-#> 6  768.  768.      1     0 0.889
-```
-
-The code below re-creates this dataset from scratch, so you can see
-exactly how it was generated.
-
-``` r
-
-# Fix simulation parameters
-n       <- 500
-alpha   <- 0.05
-x_prop  <- 0.5
-a       <- 2
-sigma   <- 500
-beta    <- log(0.25)
-lambda  <- 0.01
-phi     <- -5
 
 set.seed(20240429)
-
-Y1 <- rexp(n, rate = 1)
-Y2 <- rexp(n, rate = 1)
-Z  <- rgamma(n, shape = alpha, rate = 1)
-W1 <- (1 + Y1 / Z)^(-alpha)
-W2 <- (1 + Y2 / Z)^(-alpha)
-x  <- rbinom(n, 1, prob = x_prop)
-
-S     <- sigma * (-log(1 - W1) / exp(beta * x))^(1 / a)
-C     <- rexp(n, rate = lambda * exp(phi * W2))
-t     <- pmin(S, C)
-delta <- as.integer(S <= C)
-
-single_example_dat <- tibble::tibble(S, t, delta, x, W2)
+dat <- sim_data_se(n = 500)
 ```
 
-## Prepare data and compute IPCW weights
-
-[`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md)
+[`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md)
 converts the wide dataset to counting-process (long) format and appends
-the unstabilized IPCW weight column `wgt`. The package also provides
-`single_example_ipcw_dat` with these weights pre-computed.
+the unstabilized IPCW weight column `wgt`.
 
 ``` r
 
-data(single_example_ipcw_dat)
-head(single_example_ipcw_dat)
-#> # A tibble: 6 × 11
-#>   id_nest true_time     x    W2    id tstart tstop delta censor inv_wgt   wgt
-#>     <int>     <dbl> <int> <dbl> <int>  <dbl> <dbl> <dbl>  <dbl>   <dbl> <dbl>
-#> 1       1      427.     0 0.533     1  0     0.688     0      0   1      1   
-#> 2       1      427.     0 0.533     1  0.688 1.28      0      0   0.999  1.00
-#> 3       1      427.     0 0.533     1  1.28  2.77      0      0   0.999  1.00
-#> 4       1      427.     0 0.533     1  2.77  5.15      0      0   0.998  1.00
-#> 5       1      427.     0 0.533     1  5.15  5.79      0      0   0.997  1.00
-#> 6       1      427.     0 0.533     1  5.79  6.18      0      0   0.997  1.00
-```
-
-Alternatively, compute the weights directly:
-
-``` r
-
-dat_long <- get_ipcw_wgt(single_example_dat)
+dat_long <- get_ipcw_wgt(dat)
 ```
 
 ## IPCW Kaplan-Meier curves
 
-The chunk below requires the **ggsurvfit** package. If it is not
-installed, you can plot the IPCW K-M curves with base R instead (see the
-commented code).
+The chunk below requires the **ggsurvfit** package. Install it from CRAN
+if it is not already installed. We plot the IPCW Kaplan-Meier estimates.
 
 ``` r
 
+# install.packages("ggsurvfit")
 library(ggsurvfit)
 #> Loading required package: ggplot2
-km_fit2 <- survfit2(Surv(tstart, tstop, delta) ~ x,
-                    data    = single_example_ipcw_dat,
-                    weights = single_example_ipcw_dat$wgt,
-                    timefix = FALSE)
-ggsurvfit(km_fit2) +
+
+km_fit <- 
+  survfit2(
+    Surv(tstart, tstop, delta) ~ x,
+    data = dat_long,
+    weights = wgt,
+    timefix = FALSE)
+
+ggsurvfit(km_fit) +
   xlim(c(0, 1000)) +
   scale_color_hue(labels = c("Chemotherapy", "TKI")) +
   labs(
     x = "Days from treatment start",
     y = "Progression-free survival probability"
   )
-#> Warning: Removed 81 rows containing missing values or values outside the scale range
-#> (`geom_step()`).
 ```
 
 ![](single-event-guided-example_files/figure-html/km-plot-1.png)
 
+To get an appropriate variance estimate, we need to account for the fact
+that the IPCW are estimated from the data. We do this using
+bootstrapping and produce a Kaplan-Meier plot with bootstrap-based
+pointwise confidence intervals. First, generate the bootstrapped
+datasets with weights using the function
+[`get_ipcw_boot()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot.md).
+Note that depending on the size of the data and the number of bootstrap
+samples, the bootstrapping step can take some time to run.
+
 ``` r
 
-km_fit <- survfit(Surv(tstart, tstop, delta) ~ x,
-                  data    = single_example_ipcw_dat,
-                  weights = wgt,
-                  timefix = FALSE)
-plot(km_fit, col = 1:2, xlim = c(0, 1000),
-     xlab = "Days from treatment start",
-     ylab = "Progression-free survival probability")
-legend("topright", legend = c("Chemotherapy", "TKI"), col = 1:2, lty = 1)
+boot_dat <- 
+  get_ipcw_boot(
+    data = dat, 
+    B = 500, 
+    time_var = "t", 
+    event_var = "delta",
+    cens_cov = "W2", 
+    seed = 20240917)
 ```
+
+Then, create the plot with the
+[`plot_ipcw_km_boot_ci()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci.md)
+function. This too can take some time due to the large size of the
+boostrapped data and the calculation of the pointwise confidence
+intervals, so the below code is not executed here.
+
+``` r
+
+plot_base <-
+  plot_ipcw_km_boot_ci(
+    boot_data = boot_dat, 
+    orig_data = dat_long, 
+    pre_times = seq(0, 2429, 1),
+    covariate = "x",
+    weight_var = "wgt",
+    event_var = "delta")
+
+plot_base +
+  xlim(c(0, 1000)) +
+  scale_color_discrete(labels = c("Chemotherapy", "TKI")) +
+  scale_fill_discrete(labels = c("Chemotherapy", "TKI")) +
+  labs(
+    color = "",
+    fill = "",
+    x = "Days from treatment start",
+    y = "Progression-free survival probability"
+  ) +
+  theme(legend.position = "bottom",
+        axis.text = element_text(size = 6),
+        axis.title = element_text(size = 6),
+        legend.text = element_text(size = 6))
+```
+
+![](ipcw_km_boot_ci.png)
 
 ## IPCW Cox regression
 
-``` r
+Estimate the hazard ratio (HR) for the association between treatment
+group and PFS, accounting for the dependent censoring.
 
-ipcw_cox_fit <- coxph(
-  Surv(tstart, tstop, delta) ~ x + cluster(id),
-  data    = single_example_ipcw_dat,
-  weights = single_example_ipcw_dat$wgt,
-  timefix = FALSE
-)
-summary(ipcw_cox_fit)$coef
-#>        coef exp(coef)  se(coef) robust se         z    Pr(>|z|)
-#> x -1.209459 0.2983585 0.1029929  0.162079 -7.462158 8.51167e-14
-```
-
-Or use the convenience wrapper, which also returns the hazard ratio and
-robust-SE-based confidence interval:
+Use the convenience wrapper
+[`get_ipcw_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit.md)
+to obtain a tibble of results from the weighted Cox regression model.
 
 ``` r
 
-get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
+cox_fit <- get_ipcw_cox_fit(dat_long, weight = "wgt")
+
+cox_fit
 #> # A tibble: 1 × 7
 #>   term  log_hr log_hr_se log_hr_rob_se    hr hr_ci_low hr_ci_high
 #>   <chr>  <dbl>     <dbl>         <dbl> <dbl>     <dbl>      <dbl>
 #> 1 x      -1.21     0.103         0.162 0.298     0.217      0.410
 ```
 
-## Bootstrap percentile confidence intervals
-
-Bootstrap resampling is needed for valid confidence intervals because
-the weights are estimated. The code below runs 500 bootstrap samples; in
-practice you may want to run this in parallel.
+Then we fit the Cox model to each of the bootstrap datasets and extract
+the log(HR) from each model fit. These will be used to construct
+bootstrap percentile intervals. Because this process takes some time,
+the resulting object `cox_boot_lhr` is included in this package.
 
 ``` r
 
-set.seed(20240917)
-B <- 500
+# Fit the Cox model to the B bootstrap samples
+cox_boot_fit <-
+  boot_dat |>
+  map(~ get_ipcw_cox_fit(., covariate = "x", weight = "wgt"))
 
-ipcw_boot_dat <- map(1:B, ~ dplyr::slice_sample(single_example_dat,
-                                                  prop = 1, replace = TRUE))
-ipcw_boot_dat <- map(ipcw_boot_dat, get_ipcw_wgt)
+# Extract the B log HRs 
+cox_boot_lhr <- 
+  map_dbl(cox_boot_fit, "log_hr")
+```
 
-ipcw_cox_boot <- map(ipcw_boot_dat, ~ get_ipcw_cox_fit(., "wgt"))
-boot_log_hrs  <- map_dbl(ipcw_cox_boot, "log_hr")
+Use the function
+[`get_boot_pci()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci.md)
+on a dataframe of the log(HR)s to obtain the bootstrap-based 95%
+confidence interval.
 
-boot_pci <- get_boot_pci(data.frame(log_hr = boot_log_hrs))
+``` r
+
+# Calculate the bootstrap percentile interval
+boot_pci <- get_boot_pci(data.frame(log_hr = cox_boot_lhr))
+```
+
+And combine the results into a table:
+
+``` r
 
 result_tab <- data.frame(
-  Scale          = c("log(HR)", "HR"),
-  Estimate       = c(coef(ipcw_cox_fit), exp(coef(ipcw_cox_fit))),
-  Lower_95pct_PI = c(boot_pci[[1]], exp(boot_pci[[1]])),
-  Upper_95pct_PI = c(boot_pci[[2]], exp(boot_pci[[2]]))
+  Scale = c("log(HR)", "HR"),
+  Estimate = round(c(cox_fit$log_hr, exp(cox_fit$log_hr)), 2),
+  Lower_95pct_PI = round(c(boot_pci[[1]], exp(boot_pci[[1]])), 2),
+  Upper_95pct_PI = round(c(boot_pci[[2]], exp(boot_pci[[2]])), 2)
 )
-print(round(result_tab[, -1], 2))
+
+result_tab
+#>     Scale Estimate Lower_95pct_PI Upper_95pct_PI
+#> 1 log(HR)    -1.21          -1.55          -0.95
+#> 2      HR     0.30           0.21           0.39
 ```

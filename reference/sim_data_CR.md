@@ -8,7 +8,7 @@ censoring.
 ## Usage
 
 ``` r
-sim_data_CR(
+sim_data_cr(
   n = 100,
   censoring = "none",
   beta1 = log(1.5),
@@ -71,7 +71,7 @@ A data frame with columns:
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
+dat <- sim_data_cr(n = 200, censoring = "baseline")
 table(dat$delta)
 #> 
 #>  censor event_1 event_2 

@@ -53,7 +53,7 @@ follow-up times are set to `NA`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
+dat <- sim_data_cr(n = 200, censoring = "baseline")
 cuminc_waverage(dat, esttimes = seq(0, 5, 0.5))
 #>  [1] 0.0000000 0.2549215 0.3706694 0.4349190 0.4462671 0.4689078 0.4689078
 #>  [8] 0.4689078        NA        NA        NA

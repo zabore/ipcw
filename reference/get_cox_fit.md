@@ -55,8 +55,10 @@ A data frame with one row per term containing:
 ## Examples
 
 ``` r
-data(single_example_ipcw_dat)
-get_cox_fit(single_example_ipcw_dat)
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+dat_long <- get_ipcw_wgt(dat)
+get_cox_fit(dat_long)
 #> # A tibble: 1 × 6
 #>   term  log_hr log_hr_se    hr hr_ci_low hr_ci_high
 #>   <chr>  <dbl>     <dbl> <dbl>     <dbl>      <dbl>

@@ -11,6 +11,7 @@ get_ipcw_km_prob_x(
   data,
   covariate = "x",
   weight_var = "wgt",
+  event_var = "delta",
   pre_times = seq(0, 50, 1)
 )
 ```
@@ -21,7 +22,9 @@ get_ipcw_km_prob_x(
 
   A data frame in long (counting-process) format with an IPCW weight
   column, as returned by
-  [`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md).
+  [`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md).
+  Must contain time columns named `tstart` and `tstop` for the counting
+  process time intervals.
 
 - covariate:
 
@@ -32,10 +35,16 @@ get_ipcw_km_prob_x(
 
   Character string. Name of the IPCW weight column. Default is `"wgt"`.
 
+- event_var:
+
+  Character string. Name of the event indicator column (1 = event, 0 =
+  censored). Default is `"delta"`.
+
 - pre_times:
 
   Numeric vector of times at which to evaluate survival probabilities.
-  Defaults to `seq(0, 50, 1)`.
+  Defaults to `seq(0, 50, 1)`. Choose the second number to cover the
+  entire range of times observed in `data`
 
 ## Value
 
@@ -45,20 +54,22 @@ column named after `covariate` containing the stratum labels.
 ## Examples
 
 ``` r
-data(single_example_ipcw_dat)
-get_ipcw_km_prob_x(single_example_ipcw_dat, pre_times = seq(0, 500, 10))
-#> # A tibble: 102 × 3
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+dat_long <- get_ipcw_wgt(dat)
+get_ipcw_km_prob_x(dat_long, pre_times = seq(0, 2429, 1))
+#> # A tibble: 3,724 × 3
 #>     time  surv x    
 #>    <dbl> <dbl> <fct>
-#>  1     0 1     x=0  
-#>  2    10 1     x=0  
-#>  3    20 0.995 x=0  
-#>  4    30 0.995 x=0  
-#>  5    40 0.989 x=0  
-#>  6    50 0.989 x=0  
-#>  7    60 0.973 x=0  
-#>  8    70 0.965 x=0  
-#>  9    80 0.956 x=0  
-#> 10    90 0.947 x=0  
-#> # ℹ 92 more rows
+#>  1     0     1 x=0  
+#>  2     1     1 x=0  
+#>  3     2     1 x=0  
+#>  4     3     1 x=0  
+#>  5     4     1 x=0  
+#>  6     5     1 x=0  
+#>  7     6     1 x=0  
+#>  8     7     1 x=0  
+#>  9     8     1 x=0  
+#> 10     9     1 x=0  
+#> # ℹ 3,714 more rows
 ```

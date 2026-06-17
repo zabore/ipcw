@@ -3,7 +3,7 @@
 Estimates the marginal cumulative incidence of event type 1 using a
 weighted Aalen-Johansen estimator, where the weights are the IPCW
 weights stored in the `p_notcens` column (as added by
-[`add_ipcw_weights()`](https://zabore.github.io/ipcw/reference/add_ipcw_weights.md)).
+[`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md)).
 
 ## Usage
 
@@ -21,7 +21,7 @@ cuminc_ipcw(
 - data_long:
 
   A long-format data frame with IPCW weights, as returned by
-  [`add_ipcw_weights()`](https://zabore.github.io/ipcw/reference/add_ipcw_weights.md).
+  [`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md).
   Must contain columns `tstart`, `tstop`, `delta`, `id`, and
   `p_notcens`.
 
@@ -49,8 +49,8 @@ A numeric vector of IPCW cumulative incidence estimates at `esttimes`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long <- add_ipcw_weights(dat_long, strat = "no")
 #> Warning: Loglik converged before variable  3 ; beta may be infinite. 
 cuminc_ipcw(dat_long, esttimes = seq(0, 5, 0.5))

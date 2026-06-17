@@ -16,7 +16,7 @@ get_ipcw_cox_fit(data, covariate = "x", weight = "wgt")
 - data:
 
   A data frame in long (counting-process) format, as returned by
-  [`get_ipcw_wgt()`](https://zabore.github.io/ipcw/reference/get_ipcw_wgt.md).
+  [`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md).
   Must contain columns `tstart`, `tstop`, `delta`, `id`, the covariate
   named by `covariate`, and the weight column named by `weight`.
 
@@ -64,8 +64,10 @@ A data frame with one row per term containing:
 ## Examples
 
 ``` r
-data(single_example_ipcw_dat)
-get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+dat_long <- get_ipcw_wgt(dat)
+get_ipcw_cox_fit(dat_long, weight = "wgt")
 #> # A tibble: 1 × 7
 #>   term  log_hr log_hr_se log_hr_rob_se    hr hr_ci_low hr_ci_high
 #>   <chr>  <dbl>     <dbl>         <dbl> <dbl>     <dbl>      <dbl>

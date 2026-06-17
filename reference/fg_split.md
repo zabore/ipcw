@@ -15,7 +15,7 @@ fg_split(data_long, covariate = "z1", event2_level = "event_2")
 - data_long:
 
   A long-format data frame, as returned by
-  [`wide_to_long_CR()`](https://zabore.github.io/ipcw/reference/wide_to_long_CR.md).
+  [`wide_to_long_cr()`](https://www.emilyzabor.com/ipcw/reference/wide_to_long_CR.md).
 
 - covariate:
 
@@ -35,8 +35,8 @@ experienced the competing event, sorted by `id` and `tstart`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 100, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 100, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split(dat_long)
 nrow(dat_long_fg) > nrow(dat_long)
 #> [1] TRUE

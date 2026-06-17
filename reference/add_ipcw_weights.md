@@ -22,7 +22,7 @@ add_ipcw_weights(
 - data_long:
 
   A data frame in long format, as returned by
-  [`wide_to_long_CR()`](https://zabore.github.io/ipcw/reference/wide_to_long_CR.md).
+  [`wide_to_long_cr()`](https://www.emilyzabor.com/ipcw/reference/wide_to_long_CR.md).
   Must contain columns `tstart`, `tstop`, `censor`, and the covariate
   named by `covariate`.
 
@@ -57,8 +57,8 @@ column `p_notcens`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 100, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 100, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long <- add_ipcw_weights(dat_long, strat = "no")
 summary(dat_long$p_notcens)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 

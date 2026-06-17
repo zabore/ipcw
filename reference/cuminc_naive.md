@@ -39,7 +39,7 @@ A numeric vector of cumulative incidence estimates at `esttimes`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "independent")
+dat <- sim_data_cr(n = 200, censoring = "independent")
 cuminc_naive(dat, esttimes = seq(0, 5, 0.5))
 #>  [1] 0.0000000 0.2705481 0.3935556 0.4512375 0.4692767 0.4945862 0.5009775
 #>  [8] 0.5079067 0.5155229 0.5155229 0.5155229

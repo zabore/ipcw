@@ -23,8 +23,8 @@ column appended."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
-    <li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+    <li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -87,8 +87,9 @@ unstabilized IPCW weight), and all original columns.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">single_example_dat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu">get_ipcw_wgt</span><span class="op">(</span><span class="va">single_example_dat</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20240429</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_se.html">sim_data_se</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu">get_ipcw_wgt</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          S x        W2 id    tstart     tstop delta censor      wgt</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 426.7239 0 0.5326369  1 0.0000000 0.6883977     0      0 1.000000</span>

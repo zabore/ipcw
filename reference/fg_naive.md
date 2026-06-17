@@ -3,7 +3,7 @@
 Fits a Fine-Gray model using the standard
 [`survival::finegray()`](https://rdrr.io/pkg/survival/man/finegray.html)
 approach, without any IPCW adjustment. Serves as a comparison to
-[`fg_weighted()`](https://zabore.github.io/ipcw/reference/fg_weighted.md).
+[`fg_weighted()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted.md).
 
 ## Usage
 
@@ -41,7 +41,7 @@ hazard ratio and its standard error.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "independent")
+dat <- sim_data_cr(n = 200, censoring = "independent")
 fg_naive(dat)
 #>          coef  se(coef)
 #> z11 0.9452312 0.3624174

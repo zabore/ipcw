@@ -19,8 +19,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
-    <li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+    <li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -49,7 +49,7 @@
 
       <dl><dt>
 
-          <code><a href="sim_data_SE.html">sim_data_SE()</a></code>
+          <code><a href="sim_data_se.html">sim_data_se()</a></code>
 
         </dt>
         <dd>Simulate single-event survival data with informative censoring</dd>
@@ -95,6 +95,27 @@
 
         </dt>
         <dd>Compute bootstrap percentile confidence interval for the log hazard ratio</dd>
+
+        <dt>
+
+          <code><a href="get_ipcw_boot.html">get_ipcw_boot()</a></code>
+
+        </dt>
+        <dd>Bootstrap IPCW weighted data for single-event survival analysis</dd>
+
+        <dt>
+
+          <code><a href="plot_ipcw_km_boot_ci.html">plot_ipcw_km_boot_ci()</a></code>
+
+        </dt>
+        <dd>Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence intervals</dd>
+
+        <dt>
+
+          <code><a href="cox_boot_lhr.html">cox_boot_lhr</a></code>
+
+        </dt>
+        <dd>Bootstrap log hazard ratios from IPCW Cox models</dd>
       </dl></div><div class="section level2">
       <h2 id="competing-risks-ipcw">Competing-risks IPCW<a class="anchor" aria-label="anchor" href="#competing-risks-ipcw"></a></h2>
 
@@ -107,14 +128,14 @@
 
       <dl><dt>
 
-          <code><a href="sim_data_CR.html">sim_data_CR()</a></code>
+          <code><a href="sim_data_CR.html">sim_data_cr()</a></code>
 
         </dt>
         <dd>Simulate competing risks survival data</dd>
 
         <dt>
 
-          <code><a href="wide_to_long_CR.html">wide_to_long_CR()</a></code>
+          <code><a href="wide_to_long_CR.html">wide_to_long_cr()</a></code>
 
         </dt>
         <dd>Convert wide competing risks data to long (counting-process) format</dd>
@@ -174,29 +195,6 @@
 
         </dt>
         <dd>IPCW-weighted Fine-Gray sub-distribution hazard regression</dd>
-      </dl></div><div class="section level2">
-      <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
-
-      <div class="section-desc"><p>Example datasets included with the package.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="single_example_dat.html">single_example_dat</a></code>
-
-        </dt>
-        <dd>Single-event example dataset</dd>
-
-        <dt>
-
-          <code><a href="single_example_ipcw_dat.html">single_example_ipcw_dat</a></code>
-
-        </dt>
-        <dd>Single-event example dataset in IPCW long format</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
