@@ -1,6 +1,6 @@
 dat_se <- local({
   set.seed(1)
-  sim_data_SE(n = 200)
+  sim_data_se(n = 200)
 })
 
 test_that("get_ipcw_wgt returns long-format data with weight column", {

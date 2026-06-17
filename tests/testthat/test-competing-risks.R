@@ -1,10 +1,10 @@
 dat_cr <- local({
   set.seed(1)
-  sim_data_CR(n = 200, censoring = "baseline")
+  sim_data_cr(n = 200, censoring = "baseline")
 })
 
-test_that("wide_to_long_CR returns long-format data with required columns", {
-  dat_long <- wide_to_long_CR(dat_cr)
+test_that("wide_to_long_cr returns long-format data with required columns", {
+  dat_long <- wide_to_long_cr(dat_cr)
 
   expect_s3_class(dat_long, "data.frame")
   expect_true(nrow(dat_long) > nrow(dat_cr))
@@ -12,13 +12,13 @@ test_that("wide_to_long_CR returns long-format data with required columns", {
                     "event2_time", "z1") %in% names(dat_long)))
 })
 
-test_that("wide_to_long_CR tstart < tstop for all rows", {
-  dat_long <- wide_to_long_CR(dat_cr)
+test_that("wide_to_long_cr tstart < tstop for all rows", {
+  dat_long <- wide_to_long_cr(dat_cr)
   expect_true(all(dat_long$tstart < dat_long$tstop))
 })
 
 test_that("add_ipcw_weights (Cox) adds p_notcens in valid range", {
-  dat_long   <- wide_to_long_CR(dat_cr)
+  dat_long   <- wide_to_long_cr(dat_cr)
   dat_weights <- add_ipcw_weights(dat_long, strat = "no")
 
   expect_true("p_notcens" %in% names(dat_weights))
@@ -27,7 +27,7 @@ test_that("add_ipcw_weights (Cox) adds p_notcens in valid range", {
 })
 
 test_that("add_ipcw_weights (stratified) adds p_notcens in valid range", {
-  dat_long    <- wide_to_long_CR(dat_cr)
+  dat_long    <- wide_to_long_cr(dat_cr)
   dat_weights <- add_ipcw_weights(dat_long, strat = "yes")
 
   expect_true("p_notcens" %in% names(dat_weights))
@@ -54,7 +54,7 @@ test_that("cuminc_waverage returns correct-length numeric in [0, 1]", {
 })
 
 test_that("cuminc_ipcw returns correct-length numeric in [0, 1]", {
-  dat_long <- wide_to_long_CR(dat_cr)
+  dat_long <- wide_to_long_cr(dat_cr)
   dat_long <- add_ipcw_weights(dat_long, strat = "no")
   times    <- seq(0, 5, 0.5)
   result   <- cuminc_ipcw(dat_long, esttimes = times)
@@ -64,8 +64,8 @@ test_that("cuminc_ipcw returns correct-length numeric in [0, 1]", {
   expect_true(all(result >= 0 & result <= 1, na.rm = TRUE))
 })
 
-test_that("fg_split returns more rows than wide_to_long_CR", {
-  dat_long    <- wide_to_long_CR(dat_cr)
+test_that("fg_split returns more rows than wide_to_long_cr", {
+  dat_long    <- wide_to_long_cr(dat_cr)
   dat_long_fg <- fg_split(dat_long)
 
   expect_true(nrow(dat_long_fg) >= nrow(dat_long))
@@ -74,7 +74,7 @@ test_that("fg_split returns more rows than wide_to_long_CR", {
 })
 
 test_that("add_fg_weights adds p_notcens_after_death in valid range", {
-  dat_long    <- wide_to_long_CR(dat_cr)
+  dat_long    <- wide_to_long_cr(dat_cr)
   dat_long_fg <- fg_split(dat_long)
   dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 
@@ -93,7 +93,7 @@ test_that("fg_naive returns a matrix with correct dimensions", {
 })
 
 test_that("fg_weighted returns a matrix with correct dimensions", {
-  dat_long    <- wide_to_long_CR(dat_cr)
+  dat_long    <- wide_to_long_cr(dat_cr)
   dat_long_fg <- fg_split(dat_long)
   dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
   result      <- fg_weighted(dat_long_fg)

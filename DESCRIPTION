@@ -14,7 +14,7 @@ Description: Provides functions to implement inverse probability of censoring
     functions under competing risks. Bootstrap variance estimation is also
     supported.
 License: MIT + file LICENSE
-URL: https://emily.zabor.com/ipcw, https://github.com/zabore/ipcw
+URL: https://www.emilyzabor.com/ipcw, https://github.com/zabore/ipcw
 BugReports: https://github.com/zabore/ipcw/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

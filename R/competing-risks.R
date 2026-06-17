@@ -27,13 +27,13 @@
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "baseline")
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
 #' table(dat$delta)
 #'
 #' @importFrom survival survfit Surv
 #' @importFrom stats rexp runif uniroot
 #' @export
-sim_data_CR <- function(n = 100, censoring = "none",
+sim_data_cr <- function(n = 100, censoring = "none",
                         beta1 = log(1.5), beta2 = log(2.25), beta3 = log(3.4),
                         p = 0.3) {
   if (!(censoring %in% c("none", "independent", "baseline"))) {
@@ -103,13 +103,13 @@ sim_data_CR <- function(n = 100, censoring = "none",
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 100, censoring = "baseline")
-#' dat_long <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 100, censoring = "baseline")
+#' dat_long <- wide_to_long_cr(dat)
 #' head(dat_long)
 #'
 #' @importFrom survival survSplit Surv
 #' @export
-wide_to_long_CR <- function(dat, time_var = "t", event_var = "delta",
+wide_to_long_cr <- function(dat, time_var = "t", event_var = "delta",
                              covariate = "z1", cens_level = "censor",
                              event2_level = "event_2") {
   dat$id          <- seq_len(nrow(dat))
@@ -145,7 +145,7 @@ wide_to_long_CR <- function(dat, time_var = "t", event_var = "delta",
 #' within each level of the covariate (`strat = "yes"`).
 #'
 #' @param data_long A data frame in long format, as returned by
-#'   [wide_to_long_CR()]. Must contain columns `tstart`, `tstop`, `censor`, and
+#'   [wide_to_long_cr()]. Must contain columns `tstart`, `tstop`, `censor`, and
 #'   the covariate named by `covariate`.
 #' @param covariate Character string. Name of the covariate column used to
 #'   model the censoring distribution. Default is `"z1"`.
@@ -163,8 +163,8 @@ wide_to_long_CR <- function(dat, time_var = "t", event_var = "delta",
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 100, censoring = "baseline")
-#' dat_long <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 100, censoring = "baseline")
+#' dat_long <- wide_to_long_cr(dat)
 #' dat_long <- add_ipcw_weights(dat_long, strat = "no")
 #' summary(dat_long$p_notcens)
 #'
@@ -230,7 +230,7 @@ add_ipcw_weights <- function(data_long, covariate = "z1", strat = "no",
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "independent")
+#' dat <- sim_data_cr(n = 200, censoring = "independent")
 #' cuminc_naive(dat, esttimes = seq(0, 5, 0.5))
 #'
 #' @importFrom survival survfit Surv
@@ -268,7 +268,7 @@ cuminc_naive <- function(dat, esttimes, time_var = "t", event_var = "delta") {
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "baseline")
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
 #' cuminc_waverage(dat, esttimes = seq(0, 5, 0.5))
 #'
 #' @importFrom survival strata survfit Surv
@@ -321,8 +321,8 @@ cuminc_waverage <- function(dat,
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "baseline")
-#' dat_long <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
+#' dat_long <- wide_to_long_cr(dat)
 #' dat_long <- add_ipcw_weights(dat_long, strat = "no")
 #' cuminc_ipcw(dat_long, esttimes = seq(0, 5, 0.5))
 #'
@@ -353,7 +353,7 @@ cuminc_ipcw <- function(data_long,
 #' (as in the Fine-Gray sub-distribution hazard model). This function appends
 #' those additional rows, split at every censoring time.
 #'
-#' @param data_long A long-format data frame, as returned by [wide_to_long_CR()].
+#' @param data_long A long-format data frame, as returned by [wide_to_long_cr()].
 #' @param covariate Character string. Name of the covariate column. Default is
 #'   `"z1"`.
 #' @param event2_level Character string. Factor level in the `delta` column
@@ -364,8 +364,8 @@ cuminc_ipcw <- function(data_long,
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 100, censoring = "baseline")
-#' dat_long <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 100, censoring = "baseline")
+#' dat_long <- wide_to_long_cr(dat)
 #' dat_long_fg <- fg_split(dat_long)
 #' nrow(dat_long_fg) > nrow(dat_long)
 #'
@@ -407,8 +407,8 @@ fg_split <- function(data_long, covariate = "z1", event2_level = "event_2") {
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 100, censoring = "baseline")
-#' dat_long    <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 100, censoring = "baseline")
+#' dat_long    <- wide_to_long_cr(dat)
 #' dat_long_fg <- fg_split(dat_long)
 #' dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 #' summary(dat_long_fg$p_notcens_after_death)
@@ -459,7 +459,7 @@ add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "independent")
+#' dat <- sim_data_cr(n = 200, censoring = "independent")
 #' fg_naive(dat)
 #'
 #' @importFrom survival finegray coxph Surv
@@ -497,8 +497,8 @@ fg_naive <- function(dat, time_var = "t", event_var = "delta",
 #'
 #' @examples
 #' set.seed(42)
-#' dat <- sim_data_CR(n = 200, censoring = "baseline")
-#' dat_long    <- wide_to_long_CR(dat)
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
+#' dat_long    <- wide_to_long_cr(dat)
 #' dat_long_fg <- fg_split(dat_long)
 #' dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 #' fg_weighted(dat_long_fg)

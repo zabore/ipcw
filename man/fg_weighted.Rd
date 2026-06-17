@@ -36,8 +36,8 @@ inverse of the probability of remaining uncensored after the competing event
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
-dat_long    <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat_long    <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split(dat_long)
 dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 fg_weighted(dat_long_fg)

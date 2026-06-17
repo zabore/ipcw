@@ -28,7 +28,7 @@ comparison method when censoring is independent of covariates.
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "independent")
+dat <- sim_data_cr(n = 200, censoring = "independent")
 cuminc_naive(dat, esttimes = seq(0, 5, 0.5))
 
 }

@@ -32,7 +32,7 @@ column appended.
 \examples{
 set.seed(20240429)
 dat <- sim_data_se(n = 500)
-dat_long <- get_ipcw_wgt(single_example_dat)
+dat_long <- get_ipcw_wgt(dat)
 head(dat_long)
 
 }

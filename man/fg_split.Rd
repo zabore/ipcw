@@ -7,7 +7,7 @@
 fg_split(data_long, covariate = "z1", event2_level = "event_2")
 }
 \arguments{
-\item{data_long}{A long-format data frame, as returned by \code{\link[=wide_to_long_CR]{wide_to_long_CR()}}.}
+\item{data_long}{A long-format data frame, as returned by \code{\link[=wide_to_long_cr]{wide_to_long_cr()}}.}
 
 \item{covariate}{Character string. Name of the covariate column. Default is
 \code{"z1"}.}
@@ -26,8 +26,8 @@ those additional rows, split at every censoring time.
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 100, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 100, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split(dat_long)
 nrow(dat_long_fg) > nrow(dat_long)
 

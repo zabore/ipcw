@@ -3,20 +3,34 @@
 Fits a Fine-Gray model using the standard
 [`survival::finegray()`](https://rdrr.io/pkg/survival/man/finegray.html)
 approach, without any IPCW adjustment. Serves as a comparison to
-[`fg_weighted()`](https://zabore.github.io/ipcw/reference/fg_weighted.md).
+[`fg_weighted()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted.md).
 
 ## Usage
 
 ``` r
-fg_naive(dat)
+fg_naive(dat, time_var = "t", event_var = "delta", covariate = "z1")
 ```
 
 ## Arguments
 
 - dat:
 
-  A wide-format competing risks data frame with columns `t`, `delta`,
-  and `z1`.
+  A wide-format competing risks data frame containing the columns
+  specified by `time_var`, `event_var`, and `covariate`.
+
+- time_var:
+
+  Character string. Name of the event/censoring time column. Default is
+  `"t"`.
+
+- event_var:
+
+  Character string. Name of the event indicator column. Default is
+  `"delta"`.
+
+- covariate:
+
+  Character string. Name of the covariate column. Default is `"z1"`.
 
 ## Value
 
@@ -27,7 +41,7 @@ hazard ratio and its standard error.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "independent")
+dat <- sim_data_cr(n = 200, censoring = "independent")
 fg_naive(dat)
 #>          coef  se(coef)
 #> z11 0.9452312 0.3624174

@@ -44,7 +44,7 @@ quantities (e.g. Cox hazard ratios via \code{\link[=get_ipcw_cox_fit]{get_ipcw_c
 \examples{
 \dontrun{
 set.seed(1)
-dat <- sim_data_SE(n = 200)
+dat <- sim_data_se(n = 200)
 boot_list <- get_ipcw_boot(dat, B = 50)
 }
 

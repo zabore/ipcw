@@ -25,8 +25,8 @@ and appends it as column \code{p_notcens_after_death}.
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 100, censoring = "baseline")
-dat_long    <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 100, censoring = "baseline")
+dat_long    <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split(dat_long)
 dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
 summary(dat_long_fg$p_notcens_after_death)

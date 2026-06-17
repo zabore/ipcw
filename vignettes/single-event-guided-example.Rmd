@@ -63,7 +63,7 @@ dat_long <- get_ipcw_wgt(dat)
 The chunk below requires the **ggsurvfit** package. Install it from CRAN if it 
 is not already installed. We plot the IPCW Kaplan-Meier estimates.
 
-```{r km-plot, fig.width = 6, fig.height = 4}
+```{r km-plot, fig.width = 6, fig.height = 4, warning=FALSE}
 # install.packages("ggsurvfit")
 library(ggsurvfit)
 
@@ -91,17 +91,6 @@ generate the bootstrapped datasets with weights using the function
 bootstrap samples, the bootstrapping step can take some time to run. 
 
 ```{r boot-dat, eval = FALSE}
-get_ipcw_boot <- function(data, B = 500, time_var = "t", event_var = "delta",
-                           cens_cov = "W2", seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-
-  lapply(seq_len(B), function(i) {
-    boot_dat <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
-    get_ipcw_wgt(boot_dat, time_var = time_var, event_var = event_var,
-                  cens_cov = cens_cov)
-  })
-}
-
 boot_dat <- 
   get_ipcw_boot(
     data = dat, 
@@ -142,10 +131,10 @@ plot_base +
 ```
 
 ```{r boot-plot-save, include = FALSE, eval = FALSE}
-ggsave("vignettes/ipcw_km_boot_ci.png", width = 6, height = 4, dpi = 150)
+ggsave("vignettes/ipcw_km_boot_ci.png", width = 6, height = 4)
 ```
 
-```{r boot-plot-show, echo = FALSE}
+```{r boot-plot-show, echo = FALSE, fig.width = 6, fig.height = 4}
 knitr::include_graphics("ipcw_km_boot_ci.png")
 ```
 
@@ -187,6 +176,7 @@ Use the function `get_boot_pci()` on a dataframe of the log(HR)s to obtain the b
 boot_pci <- get_boot_pci(data.frame(log_hr = cox_boot_lhr))
 ```
 
+And combine the results into a table:
 
 ```{r boot-res}
 result_tab <- data.frame(

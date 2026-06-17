@@ -44,7 +44,7 @@ plot with 95\% percentile confidence intervals.
 \examples{
 \dontrun{
 set.seed(1)
-dat      <- sim_data_SE(n = 200)
+dat      <- sim_data_se(n = 200)
 dat_long <- get_ipcw_wgt(dat)
 boot_list <- get_ipcw_boot(dat, B = 50)
 plot_ipcw_km_boot_ci(boot_list, dat_long, pre_times = seq(0, 500, 10))

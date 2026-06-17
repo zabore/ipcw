@@ -9,11 +9,11 @@
 #'
 #' @param n Integer. Number of subjects to simulate. Default is 500.
 #' @param alpha Numeric. Shape parameter for the gamma frailty distribution, 
-#' which has a fixed rate of 1. Here, $\alpha$ denotes the level of dependence 
+#' which has a fixed rate of 1. Here, `alpha` denotes the level of dependence 
 #' between the survival time and the covariate that drives censoring. 
-#' A smaller $\alpha$ leads to a stronger dependence. 
+#' A smaller `alpha` leads to a stronger dependence. 
 #' This parameter is also related to Kendall's correlation coefficient, 
-#' $\tau$, such that $\tau = (1/\alpha)/(1/\alpha + 2)$.
+#' \eqn{\tau}, such that \eqn{\tau = (1/\alpha)/(1/\alpha + 2)}.
 #' Default is `0.05`.
 #' @param x_prop Numeric in (0, 1). Probability of treatment (`x = 1`).
 #'   Default is `0.5`.
@@ -91,7 +91,7 @@ sim_data_se <- function(n = 500, alpha = 0.05, x_prop = 0.5,
 #' @examples
 #' set.seed(20240429)
 #' dat <- sim_data_se(n = 500)
-#' dat_long <- get_ipcw_wgt(single_example_dat)
+#' dat_long <- get_ipcw_wgt(dat)
 #' head(dat_long)
 #'
 #' @importFrom survival survSplit coxph Surv
@@ -190,7 +190,8 @@ get_ipcw_wgt <- function(data, time_var = "t", event_var = "delta",
 #' @examples
 #' set.seed(20240429)
 #' dat <- sim_data_se(n = 500)
-#' get_ipcw_km_prob_x(dat, pre_times = seq(0, 2429, 1))
+#' dat_long <- get_ipcw_wgt(dat)
+#' get_ipcw_km_prob_x(dat_long, pre_times = seq(0, 2429, 1))
 #'
 #' @importFrom survival survfit Surv
 #' @importFrom tibble tibble
@@ -246,8 +247,10 @@ get_ipcw_km_prob_x <- function(data, covariate = "x", weight_var = "wgt",
 #'   }
 #'
 #' @examples
-#' data(single_example_ipcw_dat)
-#' get_ipcw_cox_fit(single_example_ipcw_dat, weight = "wgt")
+#' set.seed(20240429)
+#' dat <- sim_data_se(n = 500)
+#' dat_long <- get_ipcw_wgt(dat)
+#' get_ipcw_cox_fit(dat_long, weight = "wgt")
 #'
 #' @importFrom survival coxph Surv
 #' @importFrom broom tidy
@@ -296,8 +299,10 @@ get_ipcw_cox_fit <- function(data, covariate = "x", weight = "wgt") {
 #'   }
 #'
 #' @examples
-#' data(single_example_ipcw_dat)
-#' get_cox_fit(single_example_ipcw_dat)
+#' set.seed(20240429)
+#' dat <- sim_data_se(n = 500)
+#' dat_long <- get_ipcw_wgt(dat)
+#' get_cox_fit(dat_long)
 #'
 #' @importFrom survival coxph Surv
 #' @importFrom broom tidy
@@ -380,7 +385,7 @@ get_boot_pci <- function(data) {
 #' @examples
 #' \dontrun{
 #' set.seed(1)
-#' dat <- sim_data_SE(n = 200)
+#' dat <- sim_data_se(n = 200)
 #' boot_list <- get_ipcw_boot(dat, B = 50)
 #' }
 #'
@@ -422,7 +427,7 @@ get_ipcw_boot <- function(data, B = 500, time_var = "t", event_var = "delta",
 #' @examples
 #' \dontrun{
 #' set.seed(1)
-#' dat      <- sim_data_SE(n = 200)
+#' dat      <- sim_data_se(n = 200)
 #' dat_long <- get_ipcw_wgt(dat)
 #' boot_list <- get_ipcw_boot(dat, B = 50)
 #' plot_ipcw_km_boot_ci(boot_list, dat_long, pre_times = seq(0, 500, 10))

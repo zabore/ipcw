@@ -3,13 +3,13 @@
 Generates a dataset where event times follow a Weibull distribution
 parameterized by a binary treatment covariate `x`, and censoring depends
 on an ancillary biomarker `W2` through a shared gamma frailty, inducing
-informative censoring. This is the data-generating mechanism used in the
-single-event guided example.
+informative censoring using Clayton's copula. This is the
+data-generating mechanism used in the single-event guided example.
 
 ## Usage
 
 ``` r
-sim_data_SE(
+sim_data_se(
   n = 500,
   alpha = 0.05,
   x_prop = 0.5,
@@ -29,8 +29,12 @@ sim_data_SE(
 
 - alpha:
 
-  Numeric. Shape parameter for the gamma frailty distribution, also used
-  as the Pareto exponent for `W1` and `W2`. Default is `0.05`.
+  Numeric. Shape parameter for the gamma frailty distribution, which has
+  a fixed rate of 1. Here, `alpha` denotes the level of dependence
+  between the survival time and the covariate that drives censoring. A
+  smaller `alpha` leads to a stronger dependence. This parameter is also
+  related to Kendall's correlation coefficient, \\\tau\\, such that
+  \\\tau = (1/\alpha)/(1/\alpha + 2)\\. Default is `0.05`.
 
 - x_prop:
 
@@ -54,13 +58,14 @@ sim_data_SE(
 
 - lambda:
 
-  Numeric. Baseline censoring rate. Default is `0.01`.
+  Numeric. Baseline censoring rate when W2=0. Default is `0.01`.
 
 - phi:
 
-  Numeric. Effect of `W2` on the censoring rate (log scale). Negative
-  values mean higher `W2` leads to a lower censoring rate (i.e., longer
-  follow-up for high-`W2` subjects). Default is `-5`.
+  Numeric. The log hazard ratio for the association between a one-unit
+  increase in `W2` and censoring time. Negative values mean higher `W2`
+  leads to a lower censoring rate (i.e., longer follow-up for high-`W2`
+  subjects). Default is `-5`.
 
 ## Value
 
@@ -90,7 +95,7 @@ A data frame with columns:
 
 ``` r
 set.seed(20240429)
-dat <- sim_data_SE(n = 500)
+dat <- sim_data_se(n = 500)
 table(dat$delta)
 #> 
 #>   0   1 

@@ -19,11 +19,11 @@ sim_data_se(
 \item{n}{Integer. Number of subjects to simulate. Default is 500.}
 
 \item{alpha}{Numeric. Shape parameter for the gamma frailty distribution,
-which has a fixed rate of 1. Here, $\alpha$ denotes the level of dependence
+which has a fixed rate of 1. Here, \code{alpha} denotes the level of dependence
 between the survival time and the covariate that drives censoring.
-A smaller $\alpha$ leads to a stronger dependence.
+A smaller \code{alpha} leads to a stronger dependence.
 This parameter is also related to Kendall's correlation coefficient,
-$\tau$, such that $\tau = (1/\alpha)/(1/\alpha + 2)$.
+\eqn{\tau}, such that \eqn{\tau = (1/\alpha)/(1/\alpha + 2)}.
 Default is \code{0.05}.}
 
 \item{x_prop}{Numeric in (0, 1). Probability of treatment (\code{x = 1}).

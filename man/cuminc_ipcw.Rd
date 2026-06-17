@@ -37,8 +37,8 @@ the \code{p_notcens} column (as added by \code{\link[=add_ipcw_weights]{add_ipcw
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long <- add_ipcw_weights(dat_long, strat = "no")
 cuminc_ipcw(dat_long, esttimes = seq(0, 5, 0.5))
 

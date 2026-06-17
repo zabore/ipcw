@@ -41,6 +41,7 @@ and returns survival probabilities evaluated at a pre-specified set of times.
 \examples{
 set.seed(20240429)
 dat <- sim_data_se(n = 500)
-get_ipcw_km_prob_x(dat, pre_times = seq(0, 2429, 1))
+dat_long <- get_ipcw_wgt(dat)
+get_ipcw_km_prob_x(dat_long, pre_times = seq(0, 2429, 1))
 
 }

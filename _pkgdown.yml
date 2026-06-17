@@ -1,4 +1,4 @@
-url: https://zabore.github.io/ipcw
+url: https://www.emilyzabor.com/ipcw
 
 template:
   bootstrap: 5
@@ -39,6 +39,13 @@ navbar:
       text: News
       href: news/index.html
 
+articles:
+  - title: "Guided Examples"
+    navbar: ~
+    contents:
+      - single-event-guided-example
+      - competing-risks-guided-example
+
 reference:
   - title: "Single-event IPCW"
     desc: >
@@ -55,14 +62,15 @@ reference:
       - get_boot_pci
       - get_ipcw_boot
       - plot_ipcw_km_boot_ci
+      - cox_boot_lhr
   - title: "Competing-risks IPCW"
     desc: >
       Functions for IPCW analysis of competing risks data, including
       weight estimation, cumulative incidence estimation, and
       Fine-Gray regression.
     contents:
-      - sim_data_CR
-      - wide_to_long_CR
+      - sim_data_cr
+      - wide_to_long_cr
       - add_ipcw_weights
       - cuminc_naive
       - cuminc_waverage

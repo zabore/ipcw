@@ -3,7 +3,7 @@
 Estimates the marginal cumulative incidence of event type 1 using a
 weighted Aalen-Johansen estimator, where the weights are the IPCW
 weights stored in the `p_notcens` column (as added by
-[`add_ipcw_weights()`](https://zabore.github.io/ipcw/reference/add_ipcw_weights.md)).
+[`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md)).
 
 ## Usage
 
@@ -11,7 +11,8 @@ weights stored in the `p_notcens` column (as added by
 cuminc_ipcw(
   data_long,
   esttimes = seq(from = 0, to = 10, length.out = 100),
-  extend = TRUE
+  extend = TRUE,
+  covariate = "z1"
 )
 ```
 
@@ -20,7 +21,7 @@ cuminc_ipcw(
 - data_long:
 
   A long-format data frame with IPCW weights, as returned by
-  [`add_ipcw_weights()`](https://zabore.github.io/ipcw/reference/add_ipcw_weights.md).
+  [`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md).
   Must contain columns `tstart`, `tstop`, `delta`, `id`, and
   `p_notcens`.
 
@@ -35,6 +36,11 @@ cuminc_ipcw(
   stratum-specific maximum follow-up times are set to `NA`. Default is
   `TRUE`.
 
+- covariate:
+
+  Character string. Name of the covariate column, used only when
+  `extend = FALSE` to compute the truncation time. Default is `"z1"`.
+
 ## Value
 
 A numeric vector of IPCW cumulative incidence estimates at `esttimes`.
@@ -43,8 +49,8 @@ A numeric vector of IPCW cumulative incidence estimates at `esttimes`.
 
 ``` r
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long <- add_ipcw_weights(dat_long, strat = "no")
 #> Warning: Loglik converged before variable  3 ; beta may be infinite. 
 cuminc_ipcw(dat_long, esttimes = seq(0, 5, 0.5))

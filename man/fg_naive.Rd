@@ -29,7 +29,7 @@ without any IPCW adjustment. Serves as a comparison to \code{\link[=fg_weighted]
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "independent")
+dat <- sim_data_cr(n = 200, censoring = "independent")
 fg_naive(dat)
 
 }

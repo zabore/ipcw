@@ -14,7 +14,7 @@ add_ipcw_weights(
 }
 \arguments{
 \item{data_long}{A data frame in long format, as returned by
-\code{\link[=wide_to_long_CR]{wide_to_long_CR()}}. Must contain columns \code{tstart}, \code{tstop}, \code{censor}, and
+\code{\link[=wide_to_long_cr]{wide_to_long_cr()}}. Must contain columns \code{tstart}, \code{tstop}, \code{censor}, and
 the covariate named by \code{covariate}.}
 
 \item{covariate}{Character string. Name of the covariate column used to
@@ -43,8 +43,8 @@ within each level of the covariate (\code{strat = "yes"}).
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 100, censoring = "baseline")
-dat_long <- wide_to_long_CR(dat)
+dat <- sim_data_cr(n = 100, censoring = "baseline")
+dat_long <- wide_to_long_cr(dat)
 dat_long <- add_ipcw_weights(dat_long, strat = "no")
 summary(dat_long$p_notcens)
 

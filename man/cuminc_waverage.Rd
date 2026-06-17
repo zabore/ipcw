@@ -40,7 +40,7 @@ sample-proportion weights. This is the non-parametric IPCW approach.
 }
 \examples{
 set.seed(42)
-dat <- sim_data_CR(n = 200, censoring = "baseline")
+dat <- sim_data_cr(n = 200, censoring = "baseline")
 cuminc_waverage(dat, esttimes = seq(0, 5, 0.5))
 
 }

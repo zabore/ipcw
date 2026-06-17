@@ -11,5 +11,7 @@ utils::globalVariables(c(
   # competing risks structural columns
   "event2_time", "fgwt",
   # broom column names returned as data frames
-  "estimate", "std.error", "robust.se", "conf.low", "conf.high"
+  "estimate", "std.error", "robust.se", "conf.low", "conf.high",
+  # plot_ipcw_km_boot_ci columns used as bare names in dplyr/ggplot2
+  "surv", "time", "lpci", "upci"
 ))

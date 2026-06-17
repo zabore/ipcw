@@ -14,9 +14,9 @@ get_boot_var(data, B)
 
   A data frame with a column `log_hr` containing bootstrap log hazard
   ratio estimates, as returned by multiple calls to
-  [`get_ipcw_cox_fit()`](https://zabore.github.io/ipcw/reference/get_ipcw_cox_fit.md)
+  [`get_ipcw_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit.md)
   or
-  [`get_cox_fit()`](https://zabore.github.io/ipcw/reference/get_cox_fit.md).
+  [`get_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_cox_fit.md).
 
 - B:
 

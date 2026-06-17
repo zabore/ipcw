@@ -32,7 +32,9 @@ standard errors and the exponentiated hazard ratio with 95\% confidence
 intervals.
 }
 \examples{
-data(single_example_ipcw_dat)
-get_cox_fit(single_example_ipcw_dat)
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+dat_long <- get_ipcw_wgt(dat)
+get_cox_fit(dat_long)
 
 }

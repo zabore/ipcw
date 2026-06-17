@@ -17,7 +17,7 @@ library(purrr)
 
 ## Simulate data
 
-[`sim_data_CR()`](https://zabore.github.io/ipcw/reference/sim_data_CR.md)
+[`sim_data_cr()`](https://www.emilyzabor.com/ipcw/reference/sim_data_cr.md)
 generates competing risks data under a sub-distribution hazard model.
 The covariate `z1` is a four-level factor (PSA quartile). We use
 baseline-dependent censoring so that censoring is informative.
@@ -25,7 +25,7 @@ baseline-dependent censoring so that censoring is informative.
 ``` r
 
 set.seed(9843)
-dat <- sim_data_CR(
+dat <- sim_data_cr(
   n          = 500,
   censoring  = "baseline",
   beta1      = log(1.5),
@@ -66,7 +66,7 @@ legend("topright", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
 
 ``` r
 
-dat_long <- wide_to_long_CR(dat)
+dat_long <- wide_to_long_cr(dat)
 
 # Cox model weights
 dat_long_cox <- add_ipcw_weights(dat_long, strat = "no")
@@ -148,7 +148,7 @@ set.seed(20240917)
 
 boot_dat      <- map(1:500, ~ slice_sample(dat, prop = 1, replace = TRUE))
 boot_dat      <- map(boot_dat, function(x) { x$id <- seq_len(nrow(x)); x })
-boot_dat_long <- map(boot_dat, wide_to_long_CR)
+boot_dat_long <- map(boot_dat, wide_to_long_cr)
 
 # Weighted-average cumulative incidence bootstrap
 w_avg_boot <- map(boot_dat, ~ cuminc_waverage(., esttimes))

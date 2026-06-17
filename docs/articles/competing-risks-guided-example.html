@@ -34,8 +34,8 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
-    <li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+<li><a class="dropdown-item" href="../articles/single-event-guided-example.html">Single-Event IPCW: Guided Example</a></li>
+    <li><a class="dropdown-item" href="../articles/competing-risks-guided-example.html">Competing Risks IPCW: Guided Example</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
@@ -76,7 +76,7 @@ censoring.</p>
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://zabore.github.io/ipcw">ipcw</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.emilyzabor.com/ipcw">ipcw</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span></code></pre></div>
@@ -84,13 +84,13 @@ censoring.</p>
 <div class="section level2">
 <h2 id="simulate-data">Simulate data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
-<p><code><a href="../reference/sim_data_CR.html">sim_data_CR()</a></code> generates competing risks data under a
+<p><code><a href="../reference/sim_data_cr.html">sim_data_cr()</a></code> generates competing risks data under a
 sub-distribution hazard model. The covariate <code>z1</code> is a
 four-level factor (PSA quartile). We use baseline-dependent censoring so
 that censoring is informative.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">9843</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_data_CR.html">sim_data_CR</a></span><span class="op">(</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_data_cr.html">sim_data_cr</a></span><span class="op">(</span></span>
 <span>  n          <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  censoring  <span class="op">=</span> <span class="st">"baseline"</span>,</span>
 <span>  beta1      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1.5</span><span class="op">)</span>,</span>
@@ -124,7 +124,7 @@ that censoring is informative.</p>
 <h2 id="convert-to-long-format-and-add-ipcw-weights">Convert to long format and add IPCW weights<a class="anchor" aria-label="anchor" href="#convert-to-long-format-and-add-ipcw-weights"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/wide_to_long_CR.html">wide_to_long_CR</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/wide_to_long_cr.html">wide_to_long_cr</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Cox model weights</span></span>
 <span><span class="va">dat_long_cox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_ipcw_weights.html">add_ipcw_weights</a></span><span class="op">(</span><span class="va">dat_long</span>, strat <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span>
@@ -194,7 +194,7 @@ needed.</p>
 <span></span>
 <span><span class="va">boot_dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">500</span>, <span class="op">~</span> <span class="fu">slice_sample</span><span class="op">(</span><span class="va">dat</span>, prop <span class="op">=</span> <span class="fl">1</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">boot_dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span> <span class="va">x</span><span class="op">$</span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>; <span class="va">x</span> <span class="op">}</span><span class="op">)</span></span>
-<span><span class="va">boot_dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="va">wide_to_long_CR</span><span class="op">)</span></span>
+<span><span class="va">boot_dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="va">wide_to_long_cr</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Weighted-average cumulative incidence bootstrap</span></span>
 <span><span class="va">w_avg_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="op">~</span> <span class="fu"><a href="../reference/cuminc_waverage.html">cuminc_waverage</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">esttimes</span><span class="op">)</span><span class="op">)</span></span>
