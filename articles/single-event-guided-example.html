@@ -108,11 +108,11 @@ censoring (ANC)</li>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20240429</span><span class="op">)</span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_data_se.html">sim_data_se</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/get_ipcw_wgt.html">get_ipcw_wgt()</a></code> converts the wide dataset to
+<p><code><a href="../reference/get_ipcw_wgt_se.html">get_ipcw_wgt_se()</a></code> converts the wide dataset to
 counting-process (long) format and appends the unstabilized IPCW weight
 column <code>wgt</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_wgt.html">get_ipcw_wgt</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_wgt_se.html">get_ipcw_wgt_se</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="ipcw-kaplan-meier-curves">IPCW Kaplan-Meier curves<a class="anchor" aria-label="anchor" href="#ipcw-kaplan-meier-curves"></a>
@@ -144,25 +144,26 @@ Kaplan-Meier estimates.</p>
 fact that the IPCW are estimated from the data. We do this using
 bootstrapping and produce a Kaplan-Meier plot with bootstrap-based
 pointwise confidence intervals. First, generate the bootstrapped
-datasets with weights using the function <code><a href="../reference/get_ipcw_boot.html">get_ipcw_boot()</a></code>.
-Note that depending on the size of the data and the number of bootstrap
-samples, the bootstrapping step can take some time to run.</p>
+datasets with weights using the function
+<code><a href="../reference/get_ipcw_boot_se.html">get_ipcw_boot_se()</a></code>. Note that depending on the size of the
+data and the number of bootstrap samples, the bootstrapping step can
+take some time to run.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">boot_dat</span> <span class="op">&lt;-</span> </span>
-<span>  <span class="fu"><a href="../reference/get_ipcw_boot.html">get_ipcw_boot</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ipcw_boot_se.html">get_ipcw_boot_se</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">dat</span>, </span>
 <span>    B <span class="op">=</span> <span class="fl">500</span>, </span>
 <span>    time_var <span class="op">=</span> <span class="st">"t"</span>, </span>
 <span>    event_var <span class="op">=</span> <span class="st">"delta"</span>,</span>
 <span>    cens_cov <span class="op">=</span> <span class="st">"W2"</span>, </span>
 <span>    seed <span class="op">=</span> <span class="fl">20240917</span><span class="op">)</span></span></code></pre></div>
-<p>Then, create the plot with the <code><a href="../reference/plot_ipcw_km_boot_ci.html">plot_ipcw_km_boot_ci()</a></code>
+<p>Then, create the plot with the <code><a href="../reference/plot_ipcw_km_boot_ci_se.html">plot_ipcw_km_boot_ci_se()</a></code>
 function. This too can take some time due to the large size of the
 boostrapped data and the calculation of the pointwise confidence
 intervals, so the below code is not executed here.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_base</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/plot_ipcw_km_boot_ci.html">plot_ipcw_km_boot_ci</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/plot_ipcw_km_boot_ci_se.html">plot_ipcw_km_boot_ci_se</a></span><span class="op">(</span></span>
 <span>    boot_data <span class="op">=</span> <span class="va">boot_dat</span>, </span>
 <span>    orig_data <span class="op">=</span> <span class="va">dat_long</span>, </span>
 <span>    pre_times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2429</span>, <span class="fl">1</span><span class="op">)</span>,</span>
@@ -191,10 +192,10 @@ intervals, so the below code is not executed here.</p>
 </h2>
 <p>Estimate the hazard ratio (HR) for the association between treatment
 group and PFS, accounting for the dependent censoring.</p>
-<p>Use the convenience wrapper <code><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit()</a></code> to obtain
-a tibble of results from the weighted Cox regression model.</p>
+<p>Use the convenience wrapper <code><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se()</a></code> to
+obtain a tibble of results from the weighted Cox regression model.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cox_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit</a></span><span class="op">(</span><span class="va">dat_long</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cox_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se</a></span><span class="op">(</span><span class="va">dat_long</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cox_fit</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
@@ -210,16 +211,16 @@ package.</p>
 <code class="sourceCode R"><span><span class="co"># Fit the Cox model to the B bootstrap samples</span></span>
 <span><span class="va">cox_boot_fit</span> <span class="op">&lt;-</span></span>
 <span>  <span class="va">boot_dat</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="op">~</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit</a></span><span class="op">(</span><span class="va">.</span>, covariate <span class="op">=</span> <span class="st">"x"</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="op">~</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se</a></span><span class="op">(</span><span class="va">.</span>, covariate <span class="op">=</span> <span class="st">"x"</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Extract the B log HRs </span></span>
 <span><span class="va">cox_boot_lhr</span> <span class="op">&lt;-</span> </span>
 <span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_dbl</a></span><span class="op">(</span><span class="va">cox_boot_fit</span>, <span class="st">"log_hr"</span><span class="op">)</span></span></code></pre></div>
-<p>Use the function <code><a href="../reference/get_boot_pci.html">get_boot_pci()</a></code> on a dataframe of the
+<p>Use the function <code><a href="../reference/get_boot_pci_se.html">get_boot_pci_se()</a></code> on a dataframe of the
 log(HR)s to obtain the bootstrap-based 95% confidence interval.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate the bootstrap percentile interval</span></span>
-<span><span class="va">boot_pci</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_boot_pci.html">get_boot_pci</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>log_hr <span class="op">=</span> <span class="va">cox_boot_lhr</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">boot_pci</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_boot_pci_se.html">get_boot_pci_se</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>log_hr <span class="op">=</span> <span class="va">cox_boot_lhr</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>And combine the results into a table:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result_tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>

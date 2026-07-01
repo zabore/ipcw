@@ -3,7 +3,7 @@
 Splits the wide dataset at every censoring time, creating one or more
 rows per subject. The resulting long dataset is suitable for fitting Cox
 models for the censoring distribution and for use with
-[`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md).
+[`add_ipcw_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights_cr.md).
 
 ## Usage
 

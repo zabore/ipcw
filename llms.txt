@@ -15,6 +15,85 @@ You can install the development version of ipcw from
 pak::pak("zabore/ipcw")
 ```
 
+## Example
+
+Dependent censoring can bias standard survival estimates. The examples
+below use the package’s simulated example datasets to compare unadjusted
+estimates to IPCW-adjusted estimates, for both a single event and
+competing risks.
+
+### Single event
+
+``` r
+
+library(ipcw)
+library(survival)
+
+set.seed(20240429)
+dat <- sim_data_se(n = 500)
+
+# Unadjusted (naive) Kaplan-Meier, ignoring dependent censoring
+naive_fit <- survfit(Surv(t, delta) ~ x, data = dat)
+
+# IPCW-adjusted Kaplan-Meier
+dat_long <- get_ipcw_wgt_se(dat)
+ipcw_fit <- survfit(Surv(tstart, tstop, delta) ~ x, data = dat_long,
+                     weights = wgt, timefix = FALSE)
+
+layout(matrix(1:2, nrow = 2), heights = c(5, 1))
+par(mar = c(4, 4, 1, 1))
+plot(naive_fit, col = c("#0078bf", "#f08122"), lty = 1, lwd = 2,
+     xlab = "Days", ylab = "Survival probability")
+lines(ipcw_fit, col = c("#0078bf", "#f08122"), lty = 2, lwd = 2)
+par(mar = c(0, 0, 0, 0))
+plot.new()
+legend("center", legend = c("Chemotherapy", "TKI", "Unadjusted", "IPCW-adjusted"),
+       col = c("#0078bf", "#f08122", "black", "black"),
+       lty = c(1, 1, 1, 2), lwd = 2, ncol = 2, bty = "n")
+```
+
+![](reference/figures/README-se-example-1.png)
+
+See
+[`vignette("single-event-guided-example")`](https://www.emilyzabor.com/ipcw/articles/single-event-guided-example.md)
+for the full walkthrough, including bootstrap confidence intervals and
+Cox regression.
+
+### Competing risks
+
+``` r
+
+set.seed(9843)
+dat_cr <- sim_data_cr(n = 500, censoring = "baseline")
+
+esttimes <- seq(0, 5, 0.1)
+
+# Unadjusted (naive) cumulative incidence, ignoring dependent censoring
+ci_naive <- cuminc_naive_cr(dat_cr, esttimes)
+
+# IPCW-adjusted cumulative incidence
+dat_long_cr <- add_ipcw_weights_cr(wide_to_long_cr(dat_cr), strat = "no")
+ci_ipcw     <- cuminc_ipcw_cr(dat_long_cr, esttimes)
+
+layout(matrix(1:2, nrow = 2), heights = c(5, 1))
+par(mar = c(4, 4, 1, 1))
+plot(esttimes, ci_naive, type = "s", col = "#4b4b45", lty = 1, lwd = 2,
+     xlab = "Time", ylab = "Cumulative incidence of event 1",
+     ylim = c(0, max(ci_naive, ci_ipcw, na.rm = TRUE)))
+lines(esttimes, ci_ipcw, type = "s", col = "#4b4b45", lty = 2, lwd = 2)
+par(mar = c(0, 0, 0, 0))
+plot.new()
+legend("center", legend = c("Unadjusted", "IPCW-adjusted"),
+       col = "#4b4b45", lty = c(1, 2), lwd = 2, ncol = 2, bty = "n")
+```
+
+![](reference/figures/README-cr-example-1.png)
+
+See
+[`vignette("competing-risks-guided-example")`](https://www.emilyzabor.com/ipcw/articles/competing-risks-guided-example.md)
+for the full walkthrough, including Fine-Gray regression and bootstrap
+standard errors.
+
 # Package index
 
 ## Single-event IPCW
@@ -25,22 +104,22 @@ weighted Kaplan-Meier curves.
 
 - [`sim_data_se()`](https://www.emilyzabor.com/ipcw/reference/sim_data_se.md)
   : Simulate single-event survival data with informative censoring
-- [`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md)
+- [`get_ipcw_wgt_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt_se.md)
   : Compute IPCW weights for single-event survival data
-- [`get_ipcw_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit.md)
+- [`get_ipcw_cox_fit_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit_se.md)
   : Fit an IPCW-weighted Cox proportional hazards model
-- [`get_ipcw_km_prob_x()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_km_prob_x.md)
+- [`get_ipcw_km_prob_x_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_km_prob_x_se.md)
   : Estimate IPCW Kaplan-Meier survival probabilities by covariate
-- [`get_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_cox_fit.md)
+- [`get_cox_fit_se()`](https://www.emilyzabor.com/ipcw/reference/get_cox_fit_se.md)
   : Fit a standard (unweighted) Cox proportional hazards model
-- [`get_boot_var()`](https://www.emilyzabor.com/ipcw/reference/get_boot_var.md)
+- [`get_boot_var_se()`](https://www.emilyzabor.com/ipcw/reference/get_boot_var_se.md)
   : Compute bootstrap variance of the log hazard ratio
-- [`get_boot_pci()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci.md)
+- [`get_boot_pci_se()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci_se.md)
   : Compute bootstrap percentile confidence interval for the log hazard
   ratio
-- [`get_ipcw_boot()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot.md)
+- [`get_ipcw_boot_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot_se.md)
   : Bootstrap IPCW weighted data for single-event survival analysis
-- [`plot_ipcw_km_boot_ci()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci.md)
+- [`plot_ipcw_km_boot_ci_se()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci_se.md)
   : Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence
   intervals
 - [`cox_boot_lhr`](https://www.emilyzabor.com/ipcw/reference/cox_boot_lhr.md)
@@ -55,21 +134,21 @@ estimation, cumulative incidence estimation, and Fine-Gray regression.
   : Simulate competing risks survival data
 - [`wide_to_long_cr()`](https://www.emilyzabor.com/ipcw/reference/wide_to_long_CR.md)
   : Convert wide competing risks data to long (counting-process) format
-- [`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md)
+- [`add_ipcw_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights_cr.md)
   : Add IPCW weights to competing risks long-format data
-- [`cuminc_naive()`](https://www.emilyzabor.com/ipcw/reference/cuminc_naive.md)
+- [`cuminc_naive_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_naive_cr.md)
   : Naive (unweighted) cumulative incidence estimate
-- [`cuminc_waverage()`](https://www.emilyzabor.com/ipcw/reference/cuminc_waverage.md)
+- [`cuminc_waverage_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_waverage_cr.md)
   : Weighted-average (non-parametric) IPCW cumulative incidence estimate
-- [`cuminc_ipcw()`](https://www.emilyzabor.com/ipcw/reference/cuminc_ipcw.md)
+- [`cuminc_ipcw_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_ipcw_cr.md)
   : Cox model IPCW cumulative incidence estimate
-- [`fg_split()`](https://www.emilyzabor.com/ipcw/reference/fg_split.md)
+- [`fg_split_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_split_cr.md)
   : Prepare long-format data for Fine-Gray weighted regression
-- [`add_fg_weights()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights.md)
+- [`add_fg_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights_cr.md)
   : Add Fine-Gray IPCW weights to Fine-Gray split data
-- [`fg_naive()`](https://www.emilyzabor.com/ipcw/reference/fg_naive.md)
+- [`fg_naive_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_naive_cr.md)
   : Naive Fine-Gray sub-distribution hazard regression
-- [`fg_weighted()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted.md)
+- [`fg_weighted_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted_cr.md)
   : IPCW-weighted Fine-Gray sub-distribution hazard regression
 
 # Articles

@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   competing-risks-guided-example: competing-risks-guided-example.html
   single-event-guided-example: single-event-guided-example.html
-last_built: 2026-06-17T15:40Z
+last_built: 2026-07-01T14:57Z
 urls:
   reference: https://www.emilyzabor.com/ipcw/reference
   article: https://www.emilyzabor.com/ipcw/articles

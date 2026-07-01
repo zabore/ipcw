@@ -69,10 +69,10 @@ legend("topright", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
 dat_long <- wide_to_long_cr(dat)
 
 # Cox model weights
-dat_long_cox <- add_ipcw_weights(dat_long, strat = "no")
+dat_long_cox <- add_ipcw_weights_cr(dat_long, strat = "no")
 
 # Stratified (non-parametric) weights
-dat_long_strat <- add_ipcw_weights(dat_long, strat = "yes")
+dat_long_strat <- add_ipcw_weights_cr(dat_long, strat = "yes")
 ```
 
 ``` r
@@ -91,9 +91,9 @@ ggplot(dat_long_strat, aes(x = 1 / p_notcens)) +
 
 esttimes <- sort(dat$t)
 
-ci_naive   <- cuminc_naive(dat, esttimes)
-ci_wavg    <- cuminc_waverage(dat, esttimes)
-ci_cox     <- cuminc_ipcw(dat_long_cox, esttimes)
+ci_naive   <- cuminc_naive_cr(dat, esttimes)
+ci_wavg    <- cuminc_waverage_cr(dat, esttimes)
+ci_cox     <- cuminc_ipcw_cr(dat_long_cox, esttimes)
 ```
 
 ``` r
@@ -119,18 +119,18 @@ ggplot(to_plot, aes(x = time, y = est, colour = method)) +
 
 ``` r
 
-dat_long_fg <- fg_split(dat_long)
+dat_long_fg <- fg_split_cr(dat_long)
 
 # Stratified weights
-dat_long_fg_strat <- add_fg_weights(dat_long_fg, strat = "yes")
-fg_strat <- fg_weighted(dat_long_fg_strat, extend = FALSE)
+dat_long_fg_strat <- add_fg_weights_cr(dat_long_fg, strat = "yes")
+fg_strat <- fg_weighted_cr(dat_long_fg_strat, extend = FALSE)
 exp(fg_strat[, 1])   # exponentiated coefficients
 #>      z11      z12      z13 
 #> 1.707717 2.529884 3.168057
 
 # Cox model weights
-dat_long_fg_cox <- add_fg_weights(dat_long_fg, strat = "no")
-fg_cox <- fg_weighted(dat_long_fg_cox)
+dat_long_fg_cox <- add_fg_weights_cr(dat_long_fg, strat = "no")
+fg_cox <- fg_weighted_cr(dat_long_fg_cox)
 exp(fg_cox[, 1])
 #>      z11      z12      z13 
 #> 1.747758 2.574544 3.124305
@@ -151,7 +151,7 @@ boot_dat      <- map(boot_dat, function(x) { x$id <- seq_len(nrow(x)); x })
 boot_dat_long <- map(boot_dat, wide_to_long_cr)
 
 # Weighted-average cumulative incidence bootstrap
-w_avg_boot <- map(boot_dat, ~ cuminc_waverage(., esttimes))
+w_avg_boot <- map(boot_dat, ~ cuminc_waverage_cr(., esttimes))
 w_avg_boot <- matrix(unlist(w_avg_boot), ncol = length(esttimes), byrow = TRUE)
 lower_wavg  <- apply(w_avg_boot, 2, function(x)
                  ifelse(any(is.na(x)), NA, quantile(x, 0.025)))
@@ -159,7 +159,7 @@ upper_wavg  <- apply(w_avg_boot, 2, function(x)
                  ifelse(any(is.na(x)), NA, quantile(x, 0.975)))
 
 # Cox IPCW cumulative incidence bootstrap
-cox_boot      <- map(boot_dat_long, ~ cuminc_ipcw(add_ipcw_weights(., strat = "no"), esttimes))
+cox_boot      <- map(boot_dat_long, ~ cuminc_ipcw_cr(add_ipcw_weights_cr(., strat = "no"), esttimes))
 cox_boot      <- matrix(unlist(cox_boot), ncol = length(esttimes), byrow = TRUE)
 lower_cox     <- apply(cox_boot, 2, function(x)
                    ifelse(any(is.na(x)), NA, quantile(x, 0.025)))
@@ -167,8 +167,8 @@ upper_cox     <- apply(cox_boot, 2, function(x)
                    ifelse(any(is.na(x)), NA, quantile(x, 0.975)))
 
 # Fine-Gray stratified bootstrap
-boot_dat_fg   <- map(boot_dat_long, fg_split)
-fg_strat_boot <- map(boot_dat_fg, ~ fg_weighted(add_fg_weights(., strat = "yes"),
+boot_dat_fg   <- map(boot_dat_long, fg_split_cr)
+fg_strat_boot <- map(boot_dat_fg, ~ fg_weighted_cr(add_fg_weights_cr(., strat = "yes"),
                                                  extend = FALSE)[, 1])
 fg_strat_boot <- matrix(unlist(fg_strat_boot), ncol = 3, byrow = TRUE)
 lower_fg_strat <- apply(fg_strat_boot, 2, function(x)

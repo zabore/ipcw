@@ -8,22 +8,22 @@ weighted Kaplan-Meier curves.
 
 - [`sim_data_se()`](https://www.emilyzabor.com/ipcw/reference/sim_data_se.md)
   : Simulate single-event survival data with informative censoring
-- [`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md)
+- [`get_ipcw_wgt_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt_se.md)
   : Compute IPCW weights for single-event survival data
-- [`get_ipcw_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit.md)
+- [`get_ipcw_cox_fit_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit_se.md)
   : Fit an IPCW-weighted Cox proportional hazards model
-- [`get_ipcw_km_prob_x()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_km_prob_x.md)
+- [`get_ipcw_km_prob_x_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_km_prob_x_se.md)
   : Estimate IPCW Kaplan-Meier survival probabilities by covariate
-- [`get_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_cox_fit.md)
+- [`get_cox_fit_se()`](https://www.emilyzabor.com/ipcw/reference/get_cox_fit_se.md)
   : Fit a standard (unweighted) Cox proportional hazards model
-- [`get_boot_var()`](https://www.emilyzabor.com/ipcw/reference/get_boot_var.md)
+- [`get_boot_var_se()`](https://www.emilyzabor.com/ipcw/reference/get_boot_var_se.md)
   : Compute bootstrap variance of the log hazard ratio
-- [`get_boot_pci()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci.md)
+- [`get_boot_pci_se()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci_se.md)
   : Compute bootstrap percentile confidence interval for the log hazard
   ratio
-- [`get_ipcw_boot()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot.md)
+- [`get_ipcw_boot_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot_se.md)
   : Bootstrap IPCW weighted data for single-event survival analysis
-- [`plot_ipcw_km_boot_ci()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci.md)
+- [`plot_ipcw_km_boot_ci_se()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci_se.md)
   : Plot IPCW Kaplan-Meier curves with bootstrap percentile confidence
   intervals
 - [`cox_boot_lhr`](https://www.emilyzabor.com/ipcw/reference/cox_boot_lhr.md)
@@ -38,19 +38,19 @@ estimation, cumulative incidence estimation, and Fine-Gray regression.
   : Simulate competing risks survival data
 - [`wide_to_long_cr()`](https://www.emilyzabor.com/ipcw/reference/wide_to_long_CR.md)
   : Convert wide competing risks data to long (counting-process) format
-- [`add_ipcw_weights()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights.md)
+- [`add_ipcw_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_ipcw_weights_cr.md)
   : Add IPCW weights to competing risks long-format data
-- [`cuminc_naive()`](https://www.emilyzabor.com/ipcw/reference/cuminc_naive.md)
+- [`cuminc_naive_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_naive_cr.md)
   : Naive (unweighted) cumulative incidence estimate
-- [`cuminc_waverage()`](https://www.emilyzabor.com/ipcw/reference/cuminc_waverage.md)
+- [`cuminc_waverage_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_waverage_cr.md)
   : Weighted-average (non-parametric) IPCW cumulative incidence estimate
-- [`cuminc_ipcw()`](https://www.emilyzabor.com/ipcw/reference/cuminc_ipcw.md)
+- [`cuminc_ipcw_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_ipcw_cr.md)
   : Cox model IPCW cumulative incidence estimate
-- [`fg_split()`](https://www.emilyzabor.com/ipcw/reference/fg_split.md)
+- [`fg_split_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_split_cr.md)
   : Prepare long-format data for Fine-Gray weighted regression
-- [`add_fg_weights()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights.md)
+- [`add_fg_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights_cr.md)
   : Add Fine-Gray IPCW weights to Fine-Gray split data
-- [`fg_naive()`](https://www.emilyzabor.com/ipcw/reference/fg_naive.md)
+- [`fg_naive_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_naive_cr.md)
   : Naive Fine-Gray sub-distribution hazard regression
-- [`fg_weighted()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted.md)
+- [`fg_weighted_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted_cr.md)
   : IPCW-weighted Fine-Gray sub-distribution hazard regression

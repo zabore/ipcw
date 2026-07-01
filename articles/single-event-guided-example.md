@@ -40,13 +40,13 @@ set.seed(20240429)
 dat <- sim_data_se(n = 500)
 ```
 
-[`get_ipcw_wgt()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt.md)
+[`get_ipcw_wgt_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_wgt_se.md)
 converts the wide dataset to counting-process (long) format and appends
 the unstabilized IPCW weight column `wgt`.
 
 ``` r
 
-dat_long <- get_ipcw_wgt(dat)
+dat_long <- get_ipcw_wgt_se(dat)
 ```
 
 ## IPCW Kaplan-Meier curves
@@ -83,14 +83,14 @@ that the IPCW are estimated from the data. We do this using
 bootstrapping and produce a Kaplan-Meier plot with bootstrap-based
 pointwise confidence intervals. First, generate the bootstrapped
 datasets with weights using the function
-[`get_ipcw_boot()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot.md).
+[`get_ipcw_boot_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot_se.md).
 Note that depending on the size of the data and the number of bootstrap
 samples, the bootstrapping step can take some time to run.
 
 ``` r
 
 boot_dat <- 
-  get_ipcw_boot(
+  get_ipcw_boot_se(
     data = dat, 
     B = 500, 
     time_var = "t", 
@@ -100,7 +100,7 @@ boot_dat <-
 ```
 
 Then, create the plot with the
-[`plot_ipcw_km_boot_ci()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci.md)
+[`plot_ipcw_km_boot_ci_se()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_km_boot_ci_se.md)
 function. This too can take some time due to the large size of the
 boostrapped data and the calculation of the pointwise confidence
 intervals, so the below code is not executed here.
@@ -108,7 +108,7 @@ intervals, so the below code is not executed here.
 ``` r
 
 plot_base <-
-  plot_ipcw_km_boot_ci(
+  plot_ipcw_km_boot_ci_se(
     boot_data = boot_dat, 
     orig_data = dat_long, 
     pre_times = seq(0, 2429, 1),
@@ -140,12 +140,12 @@ Estimate the hazard ratio (HR) for the association between treatment
 group and PFS, accounting for the dependent censoring.
 
 Use the convenience wrapper
-[`get_ipcw_cox_fit()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit.md)
+[`get_ipcw_cox_fit_se()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_cox_fit_se.md)
 to obtain a tibble of results from the weighted Cox regression model.
 
 ``` r
 
-cox_fit <- get_ipcw_cox_fit(dat_long, weight = "wgt")
+cox_fit <- get_ipcw_cox_fit_se(dat_long, weight = "wgt")
 
 cox_fit
 #> # A tibble: 1 × 7
@@ -164,7 +164,7 @@ the resulting object `cox_boot_lhr` is included in this package.
 # Fit the Cox model to the B bootstrap samples
 cox_boot_fit <-
   boot_dat |>
-  map(~ get_ipcw_cox_fit(., covariate = "x", weight = "wgt"))
+  map(~ get_ipcw_cox_fit_se(., covariate = "x", weight = "wgt"))
 
 # Extract the B log HRs 
 cox_boot_lhr <- 
@@ -172,14 +172,14 @@ cox_boot_lhr <-
 ```
 
 Use the function
-[`get_boot_pci()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci.md)
+[`get_boot_pci_se()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci_se.md)
 on a dataframe of the log(HR)s to obtain the bootstrap-based 95%
 confidence interval.
 
 ``` r
 
 # Calculate the bootstrap percentile interval
-boot_pci <- get_boot_pci(data.frame(log_hr = cox_boot_lhr))
+boot_pci <- get_boot_pci_se(data.frame(log_hr = cox_boot_lhr))
 ```
 
 And combine the results into a table:
