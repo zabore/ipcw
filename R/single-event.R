@@ -223,8 +223,9 @@ get_ipcw_km_prob_x_se <- function(data, covariate = "x", weight_var = "wgt",
 #'
 #' Fits a weighted Cox model with a robust sandwich variance and returns
 #' log-hazard ratio estimates together with both model-based and robust
-#' standard errors, plus the exponentiated hazard ratio and 95% confidence
-#' interval based on the robust standard error.
+#' standard errors, plus the hazard ratio and 95% confidence
+#' interval based on the robust standard error. 
+#' Convenience wrapper for [survival::coxph()].
 #'
 #' @param data A data frame in long (counting-process) format, as returned by
 #'   [get_ipcw_wgt_se()]. Must contain columns `tstart`, `tstop`, `delta`, `id`,
@@ -279,7 +280,7 @@ get_ipcw_cox_fit_se <- function(data, covariate = "x", weight = "wgt") {
 #'
 #' Convenience wrapper around [survival::coxph()] using counting-process
 #' (`tstart`, `tstop`) time variables. Returns log-hazard ratio estimates with
-#' standard errors and the exponentiated hazard ratio with 95% confidence
+#' standard errors and the hazard ratio with 95% confidence
 #' intervals.
 #'
 #' @param data A data frame in long (counting-process) format containing
@@ -383,12 +384,12 @@ get_boot_pci_se <- function(data) {
 #'   as returned by [get_ipcw_wgt_se()].
 #'
 #' @examples
-#' \dontrun{
+#' # Toy example with only 10 bootstrap samples
 #' set.seed(1)
 #' dat <- sim_data_se(n = 200)
-#' boot_list <- get_ipcw_boot_se(dat, B = 50)
-#' }
-#'
+#' boot_list <- get_ipcw_boot_se(dat, B = 10)
+#' 
+#' 
 #' @export
 get_ipcw_boot_se <- function(data, B = 500, time_var = "t", event_var = "delta",
                            cens_cov = "W2", seed = NULL) {
@@ -426,10 +427,12 @@ get_ipcw_boot_se <- function(data, B = 500, time_var = "t", event_var = "delta",
 #'
 #' @examples
 #' \dontrun{
+#' # Not run due to computational time. 
+#' # Use a smaller n and/or smaller B for testing.
 #' set.seed(1)
-#' dat      <- sim_data_se(n = 200)
+#' dat      <- sim_data_se(n = 500)
 #' dat_long <- get_ipcw_wgt_se(dat)
-#' boot_list <- get_ipcw_boot_se(dat, B = 50)
+#' boot_list <- get_ipcw_boot_se(dat, B = 500)
 #' plot_ipcw_km_boot_ci_se(boot_list, dat_long, pre_times = seq(0, 500, 10))
 #' }
 #'
