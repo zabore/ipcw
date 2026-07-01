@@ -83,7 +83,7 @@ ci_cox <- cuminc_ipcw_cr(dat_long_cox, esttimes)
 ```
 
 
-```{r cuminc-plot, fig.width = 6, fig.height = 4}
+```{r cuminc-plot, fig.width = 6, fig.height = 5}
 # Combine the two sets of weights for plotting
 to_plot <- 
   rbind(
