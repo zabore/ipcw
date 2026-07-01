@@ -84,16 +84,37 @@ a progression or die.</p>
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.emilyzabor.com/ipcw">ipcw</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install packages if needed</span></span>
+<span><span class="co"># install.packages(c(""survival", "purrr", "ggsurvfit", "gt"))</span></span>
+<span><span class="co"># install.packages("pak")</span></span>
+<span><span class="co"># pak::pak("zabore/ipcw")</span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.emilyzabor.com/ipcw">ipcw</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pharmaverse/ggsurvfit" class="external-link">ggsurvfit</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gt.rstudio.com" class="external-link">gt</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="simulate-data-and-compute-ipcw-weights">Simulate data and compute IPCW weights<a class="anchor" aria-label="anchor" href="#simulate-data-and-compute-ipcw-weights"></a>
 </h2>
 <p>First, create a simulated dataset of <code>n=500</code> patients
-using the <code><a href="../reference/sim_data_se.html">sim_data_se()</a></code> function. Key parameters
-include:</p>
+using the <code><a href="../reference/sim_data_se.html">sim_data_se()</a></code> function with all arguments set to
+the defaults:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">67</span><span class="op">)</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="../reference/sim_data_se.html">sim_data_se</a></span><span class="op">(</span></span>
+<span>    n <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>    alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>    x_prop <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>    a <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    sigma <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>    beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.25</span><span class="op">)</span>,</span>
+<span>    lambda <span class="op">=</span> <span class="fl">0.01</span>,</span>
+<span>    phi <span class="op">=</span> <span class="op">-</span><span class="fl">5</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<p>Key columns in the simulated data include:</p>
 <ul>
 <li>
 <code>t</code>: observed time (event or censoring)</li>
@@ -105,64 +126,39 @@ include:</p>
 <code>W2</code>: ancillary biomarker that drives informative
 censoring (ANC)</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20240429</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_data_se.html">sim_data_se</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/get_ipcw_wgt.html">get_ipcw_wgt()</a></code> converts the wide dataset to
+<p><code><a href="../reference/get_ipcw_wgt_se.html">get_ipcw_wgt_se()</a></code> converts the wide dataset to
 counting-process (long) format and appends the unstabilized IPCW weight
 column <code>wgt</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_wgt.html">get_ipcw_wgt</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_wgt_se.html">get_ipcw_wgt_se</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="ipcw-kaplan-meier-curves">IPCW Kaplan-Meier curves<a class="anchor" aria-label="anchor" href="#ipcw-kaplan-meier-curves"></a>
 </h2>
-<p>The chunk below requires the <strong>ggsurvfit</strong> package.
-Install it from CRAN if it is not already installed. We plot the IPCW
-Kaplan-Meier estimates.</p>
+<p>First, to get an appropriate confidence interval for the Kaplan-Meier
+plot, we need to account for the fact that the IPCW are estimated from
+the data. We do this using bootstrapping and produce a Kaplan-Meier plot
+with bootstrap-based pointwise confidence intervals. First, generate the
+bootstrapped datasets with weights using the function
+<code><a href="../reference/get_ipcw_boot_se.html">get_ipcw_boot_se()</a></code>. Note that depending on the size of the
+data and the number of bootstrap samples, the bootstrapping step can
+take some time to run, so the below code is not executed here.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("ggsurvfit")</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pharmaverse/ggsurvfit" class="external-link">ggsurvfit</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: ggplot2</span></span>
-<span></span>
-<span><span class="va">km_fit</span> <span class="op">&lt;-</span> </span>
-<span>  <span class="fu"><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/survfit2.html" class="external-link">survfit2</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">tstart</span>, <span class="va">tstop</span>, <span class="va">delta</span><span class="op">)</span> <span class="op">~</span> <span class="va">x</span>,</span>
-<span>    data <span class="op">=</span> <span class="va">dat_long</span>,</span>
-<span>    weights <span class="op">=</span> <span class="va">wgt</span>,</span>
-<span>    timefix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/ggsurvfit.html" class="external-link">ggsurvfit</a></span><span class="op">(</span><span class="va">km_fit</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">xlim</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1000</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_hue.html" class="external-link">scale_color_hue</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chemotherapy"</span>, <span class="st">"TKI"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Days from treatment start"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Progression-free survival probability"</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<p><img src="single-event-guided-example_files/figure-html/km-plot-1.png" class="r-plt" alt="" width="576"></p>
-<p>To get an appropriate variance estimate, we need to account for the
-fact that the IPCW are estimated from the data. We do this using
-bootstrapping and produce a Kaplan-Meier plot with bootstrap-based
-pointwise confidence intervals. First, generate the bootstrapped
-datasets with weights using the function <code><a href="../reference/get_ipcw_boot.html">get_ipcw_boot()</a></code>.
-Note that depending on the size of the data and the number of bootstrap
-samples, the bootstrapping step can take some time to run.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">boot_dat</span> <span class="op">&lt;-</span> </span>
-<span>  <span class="fu"><a href="../reference/get_ipcw_boot.html">get_ipcw_boot</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ipcw_boot_se.html">get_ipcw_boot_se</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">dat</span>, </span>
 <span>    B <span class="op">=</span> <span class="fl">500</span>, </span>
 <span>    time_var <span class="op">=</span> <span class="st">"t"</span>, </span>
 <span>    event_var <span class="op">=</span> <span class="st">"delta"</span>,</span>
 <span>    cens_cov <span class="op">=</span> <span class="st">"W2"</span>, </span>
 <span>    seed <span class="op">=</span> <span class="fl">20240917</span><span class="op">)</span></span></code></pre></div>
-<p>Then, create the plot with the <code><a href="../reference/plot_ipcw_km_boot_ci.html">plot_ipcw_km_boot_ci()</a></code>
+<p>Then, create the plot with the <code><a href="../reference/plot_ipcw_km_boot_ci_se.html">plot_ipcw_km_boot_ci_se()</a></code>
 function. This too can take some time due to the large size of the
 boostrapped data and the calculation of the pointwise confidence
 intervals, so the below code is not executed here.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_base</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/plot_ipcw_km_boot_ci.html">plot_ipcw_km_boot_ci</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/plot_ipcw_km_boot_ci_se.html">plot_ipcw_km_boot_ci_se</a></span><span class="op">(</span></span>
 <span>    boot_data <span class="op">=</span> <span class="va">boot_dat</span>, </span>
 <span>    orig_data <span class="op">=</span> <span class="va">dat_long</span>, </span>
 <span>    pre_times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2429</span>, <span class="fl">1</span><span class="op">)</span>,</span>
@@ -172,56 +168,59 @@ intervals, so the below code is not executed here.</p>
 <span></span>
 <span><span class="va">plot_base</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">xlim</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1000</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_colour_discrete.html" class="external-link">scale_color_discrete</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chemotherapy"</span>, <span class="st">"TKI"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_colour_discrete.html" class="external-link">scale_fill_discrete</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chemotherapy"</span>, <span class="st">"TKI"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_color_manual</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chemotherapy"</span>, <span class="st">"TKI"</span><span class="op">)</span>, </span>
+<span>                       values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#0078bf"</span>, <span class="st">"#f7c612"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chemotherapy"</span>, <span class="st">"TKI"</span><span class="op">)</span>, </span>
+<span>                                 values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#0078bf"</span>, <span class="st">"#f7c612"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    color <span class="op">=</span> <span class="st">""</span>,</span>
 <span>    fill <span class="op">=</span> <span class="st">""</span>,</span>
 <span>    x <span class="op">=</span> <span class="st">"Days from treatment start"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Progression-free survival probability"</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span>,</span>
-<span>        axis.text <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>,</span>
-<span>        axis.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>,</span>
-<span>        legend.text <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">6</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ipcw_km_boot_ci.png" class="r-plt" alt="" width="900"></p>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ipcw_km_boot_ci.png" class="r-plt" alt="" width="100%"></p>
+<p>Patients in the TKI group have higher progression-free survival
+probability than those in the chemotherapy group, and that the
+bootstrap-based confidence intervals are not overlapping for most of the
+follow-up period.</p>
 </div>
 <div class="section level2">
 <h2 id="ipcw-cox-regression">IPCW Cox regression<a class="anchor" aria-label="anchor" href="#ipcw-cox-regression"></a>
 </h2>
-<p>Estimate the hazard ratio (HR) for the association between treatment
-group and PFS, accounting for the dependent censoring.</p>
-<p>Use the convenience wrapper <code><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit()</a></code> to obtain
-a tibble of results from the weighted Cox regression model.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cox_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit</a></span><span class="op">(</span><span class="va">dat_long</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span></span>
+<p>Next, estimate the hazard ratio (HR) for the association between
+treatment group and PFS, accounting for the dependent censoring.</p>
+<p>Use the convenience wrapper <code><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se()</a></code> to
+obtain a tibble of results from the weighted Cox regression model.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cox_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se</a></span><span class="op">(</span><span class="va">dat_long</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cox_fit</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   term  log_hr log_hr_se log_hr_rob_se    hr hr_ci_low hr_ci_high</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> x      -<span style="color: #BB0000;">1.21</span>     0.103         0.162 0.298     0.217      0.410</span></span></code></pre></div>
-<p>Then we fit the Cox model to each of the bootstrap datasets and
-extract the log(HR) from each model fit. These will be used to construct
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> x      -<span style="color: #BB0000;">1.41</span>     0.109         0.183 0.243     0.170      0.348</span></span></code></pre></div>
+<p>Then fit the Cox model to each of the bootstrap datasets and extract
+the log(HR) from each model fit. These will be used to construct
 bootstrap percentile intervals. Because this process takes some time,
 the resulting object <code>cox_boot_lhr</code> is included in this
 package.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit the Cox model to the B bootstrap samples</span></span>
 <span><span class="va">cox_boot_fit</span> <span class="op">&lt;-</span></span>
 <span>  <span class="va">boot_dat</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="op">~</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit.html">get_ipcw_cox_fit</a></span><span class="op">(</span><span class="va">.</span>, covariate <span class="op">=</span> <span class="st">"x"</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="op">~</span> <span class="fu"><a href="../reference/get_ipcw_cox_fit_se.html">get_ipcw_cox_fit_se</a></span><span class="op">(</span><span class="va">.</span>, covariate <span class="op">=</span> <span class="st">"x"</span>, weight <span class="op">=</span> <span class="st">"wgt"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Extract the B log HRs </span></span>
 <span><span class="va">cox_boot_lhr</span> <span class="op">&lt;-</span> </span>
 <span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_dbl</a></span><span class="op">(</span><span class="va">cox_boot_fit</span>, <span class="st">"log_hr"</span><span class="op">)</span></span></code></pre></div>
-<p>Use the function <code><a href="../reference/get_boot_pci.html">get_boot_pci()</a></code> on a dataframe of the
+<p>Use the function <code><a href="../reference/get_boot_pci_se.html">get_boot_pci_se()</a></code> on a dataframe of the
 log(HR)s to obtain the bootstrap-based 95% confidence interval.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate the bootstrap percentile interval</span></span>
-<span><span class="va">boot_pci</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_boot_pci.html">get_boot_pci</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>log_hr <span class="op">=</span> <span class="va">cox_boot_lhr</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">boot_pci</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_boot_pci_se.html">get_boot_pci_se</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>log_hr <span class="op">=</span> <span class="va">cox_boot_lhr</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>And combine the results into a table:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result_tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log(HR)"</span>, <span class="st">"HR"</span><span class="op">)</span>,</span>
 <span>  Estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">cox_fit</span><span class="op">$</span><span class="va">log_hr</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">cox_fit</span><span class="op">$</span><span class="va">log_hr</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
@@ -229,10 +228,505 @@ log(HR)s to obtain the bootstrap-based 95% confidence interval.</p>
 <span>  Upper_95pct_PI <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">boot_pci</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">boot_pci</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">result_tab</span></span>
-<span><span class="co">#&gt;     Scale Estimate Lower_95pct_PI Upper_95pct_PI</span></span>
-<span><span class="co">#&gt; 1 log(HR)    -1.21          -1.55          -0.95</span></span>
-<span><span class="co">#&gt; 2      HR     0.30           0.21           0.39</span></span></code></pre></div>
+<span><span class="va">result_tab</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/gt.html" class="external-link">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/cols_label.html" class="external-link">cols_label</a></span><span class="op">(</span></span>
+<span>    Scale <span class="op">=</span> <span class="st">"Scale"</span>,</span>
+<span>    Estimate <span class="op">=</span> <span class="st">"Estimate"</span>,</span>
+<span>    Lower_95pct_PI <span class="op">=</span> <span class="st">"Lower 95% PI"</span>,</span>
+<span>    Upper_95pct_PI <span class="op">=</span> <span class="st">"Upper 95% PI"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="co"># Add a footnote</span></span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_footnote.html" class="external-link">tab_footnote</a></span><span class="op">(</span></span>
+<span>    footnote <span class="op">=</span> <span class="st">"PI = percentile interval"</span>,</span>
+<span>    locations <span class="op">=</span> <span class="fu"><a href="https://gt.rstudio.com/reference/cells_column_labels.html" class="external-link">cells_column_labels</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Lower_95pct_PI</span>, <span class="va">Upper_95pct_PI</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span></span>
+<span>    <span class="st">"IPCW Cox regression results for the association between treatment group and progression-free survival"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<div id="bioyvstfok" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#bioyvstfok table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#bioyvstfok thead, #bioyvstfok tbody, #bioyvstfok tfoot, #bioyvstfok tr, #bioyvstfok td, #bioyvstfok th {
+  border-style: none;
+}
+
+#bioyvstfok p {
+  margin: 0;
+  padding: 0;
+}
+
+#bioyvstfok .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#bioyvstfok .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#bioyvstfok .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#bioyvstfok .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#bioyvstfok .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#bioyvstfok .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#bioyvstfok .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#bioyvstfok .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#bioyvstfok .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#bioyvstfok .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#bioyvstfok .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#bioyvstfok .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#bioyvstfok .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#bioyvstfok .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#bioyvstfok .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#bioyvstfok .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#bioyvstfok .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#bioyvstfok .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#bioyvstfok .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#bioyvstfok .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#bioyvstfok .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#bioyvstfok .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#bioyvstfok .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#bioyvstfok .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#bioyvstfok .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#bioyvstfok .gt_left {
+  text-align: left;
+}
+
+#bioyvstfok .gt_center {
+  text-align: center;
+}
+
+#bioyvstfok .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#bioyvstfok .gt_font_normal {
+  font-weight: normal;
+}
+
+#bioyvstfok .gt_font_bold {
+  font-weight: bold;
+}
+
+#bioyvstfok .gt_font_italic {
+  font-style: italic;
+}
+
+#bioyvstfok .gt_super {
+  font-size: 65%;
+}
+
+#bioyvstfok .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#bioyvstfok .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#bioyvstfok .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#bioyvstfok .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#bioyvstfok .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#bioyvstfok .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#bioyvstfok .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#bioyvstfok .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#bioyvstfok div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading">
+<td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>IPCW Cox regression results for the association between treatment group and progression-free survival</td>
+    </tr>
+<tr class="gt_col_headings">
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Scale">Scale</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Estimate">Estimate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Lower_95pct_PI">Lower 95% PI<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span>
+</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Upper_95pct_PI">Upper 95% PI<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span>
+</th>
+    </tr>
+</thead>
+<tbody class="gt_table_body">
+<tr>
+<td headers="Scale" class="gt_row gt_left">log(HR)</td>
+<td headers="Estimate" class="gt_row gt_right">-1.41</td>
+<td headers="Lower_95pct_PI" class="gt_row gt_right">-1.55</td>
+<td headers="Upper_95pct_PI" class="gt_row gt_right">-0.95</td>
+</tr>
+<tr>
+<td headers="Scale" class="gt_row gt_left">HR</td>
+<td headers="Estimate" class="gt_row gt_right">0.24</td>
+<td headers="Lower_95pct_PI" class="gt_row gt_right">0.21</td>
+<td headers="Upper_95pct_PI" class="gt_row gt_right">0.39</td>
+</tr>
+</tbody>
+<tfoot><tr class="gt_footnotes">
+<td class="gt_footnote" colspan="4">
+<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span> PI = percentile interval</td>
+    </tr></tfoot>
+</table>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
