@@ -40,7 +40,7 @@ A data frame in long format with columns \code{id}, \code{delta}, \code{censor},
 \description{
 Splits the wide dataset at every censoring time, creating one or more rows
 per subject. The resulting long dataset is suitable for fitting Cox models
-for the censoring distribution and for use with \code{\link[=add_ipcw_weights]{add_ipcw_weights()}}.
+for the censoring distribution and for use with \code{\link[=add_ipcw_weights_cr]{add_ipcw_weights_cr()}}.
 }
 \examples{
 set.seed(42)

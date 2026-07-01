@@ -82,7 +82,7 @@ sim_data_cr <- function(n = 100, censoring = "none",
 #'
 #' Splits the wide dataset at every censoring time, creating one or more rows
 #' per subject. The resulting long dataset is suitable for fitting Cox models
-#' for the censoring distribution and for use with [add_ipcw_weights()].
+#' for the censoring distribution and for use with [add_ipcw_weights_cr()].
 #'
 #' @param dat A wide-format competing risks data frame. Must contain the columns
 #'   specified by `time_var`, `event_var`, and `covariate`.
@@ -165,13 +165,13 @@ wide_to_long_cr <- function(dat, time_var = "t", event_var = "delta",
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 100, censoring = "baseline")
 #' dat_long <- wide_to_long_cr(dat)
-#' dat_long <- add_ipcw_weights(dat_long, strat = "no")
+#' dat_long <- add_ipcw_weights_cr(dat_long, strat = "no")
 #' summary(dat_long$p_notcens)
 #'
 #' @importFrom survival coxph survfit Surv
 #' @importFrom stats predict
 #' @export
-add_ipcw_weights <- function(data_long, covariate = "z1", strat = "no",
+add_ipcw_weights_cr <- function(data_long, covariate = "z1", strat = "no",
                               new_data = NULL, by.start = TRUE) {
   if (is.null(new_data)) new_data <- data_long
 
@@ -231,11 +231,11 @@ add_ipcw_weights <- function(data_long, covariate = "z1", strat = "no",
 #' @examples
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 200, censoring = "independent")
-#' cuminc_naive(dat, esttimes = seq(0, 5, 0.5))
+#' cuminc_naive_cr(dat, esttimes = seq(0, 5, 0.5))
 #'
 #' @importFrom survival survfit Surv
 #' @export
-cuminc_naive <- function(dat, esttimes, time_var = "t", event_var = "delta") {
+cuminc_naive_cr <- function(dat, esttimes, time_var = "t", event_var = "delta") {
   naive_formula <- as.formula(
     paste0("Surv(", time_var, ", ", event_var, ") ~ 1")
   )
@@ -269,11 +269,11 @@ cuminc_naive <- function(dat, esttimes, time_var = "t", event_var = "delta") {
 #' @examples
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 200, censoring = "baseline")
-#' cuminc_waverage(dat, esttimes = seq(0, 5, 0.5))
+#' cuminc_waverage_cr(dat, esttimes = seq(0, 5, 0.5))
 #'
 #' @importFrom survival strata survfit Surv
 #' @export
-cuminc_waverage <- function(dat,
+cuminc_waverage_cr <- function(dat,
                              esttimes = seq(from = 0, to = 10, length.out = 100),
                              time_var = "t", event_var = "delta",
                              covariate = "z1") {
@@ -303,10 +303,10 @@ cuminc_waverage <- function(dat,
 #'
 #' Estimates the marginal cumulative incidence of event type 1 using a weighted
 #' Aalen-Johansen estimator, where the weights are the IPCW weights stored in
-#' the `p_notcens` column (as added by [add_ipcw_weights()]).
+#' the `p_notcens` column (as added by [add_ipcw_weights_cr()]).
 #'
 #' @param data_long A long-format data frame with IPCW weights, as returned by
-#'   [add_ipcw_weights()]. Must contain columns `tstart`, `tstop`, `delta`,
+#'   [add_ipcw_weights_cr()]. Must contain columns `tstart`, `tstop`, `delta`,
 #'   `id`, and `p_notcens`.
 #' @param esttimes Numeric vector of times at which to return estimates.
 #'   Defaults to 100 equally spaced points from 0 to 10.
@@ -323,12 +323,12 @@ cuminc_waverage <- function(dat,
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 200, censoring = "baseline")
 #' dat_long <- wide_to_long_cr(dat)
-#' dat_long <- add_ipcw_weights(dat_long, strat = "no")
-#' cuminc_ipcw(dat_long, esttimes = seq(0, 5, 0.5))
+#' dat_long <- add_ipcw_weights_cr(dat_long, strat = "no")
+#' cuminc_ipcw_cr(dat_long, esttimes = seq(0, 5, 0.5))
 #'
 #' @importFrom survival survfit Surv
 #' @export
-cuminc_ipcw <- function(data_long,
+cuminc_ipcw_cr <- function(data_long,
                          esttimes = seq(from = 0, to = 10, length.out = 100),
                          extend = TRUE, covariate = "z1") {
   fit  <- survfit(Surv(tstart, tstop, delta) ~ 1,
@@ -366,11 +366,11 @@ cuminc_ipcw <- function(data_long,
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 100, censoring = "baseline")
 #' dat_long <- wide_to_long_cr(dat)
-#' dat_long_fg <- fg_split(dat_long)
+#' dat_long_fg <- fg_split_cr(dat_long)
 #' nrow(dat_long_fg) > nrow(dat_long)
 #'
 #' @export
-fg_split <- function(data_long, covariate = "z1", event2_level = "event_2") {
+fg_split_cr <- function(data_long, covariate = "z1", event2_level = "event_2") {
   times <- sort(unique(data_long$tstop[data_long$censor == 1]))
 
   event2_dat <- data_long[data_long$delta == event2_level,
@@ -397,10 +397,10 @@ fg_split <- function(data_long, covariate = "z1", event2_level = "event_2") {
 #' and appends it as column `p_notcens_after_death`.
 #'
 #' @param data_long_fg A data frame in Fine-Gray format, as returned by
-#'   [fg_split()].
+#'   [fg_split_cr()].
 #' @param covariate Character string. Name of the covariate column. Default is
 #'   `"z1"`.
-#' @param strat Character. Passed to [add_ipcw_weights()]. `"no"` (default)
+#' @param strat Character. Passed to [add_ipcw_weights_cr()]. `"no"` (default)
 #'   uses a Cox model; `"yes"` uses stratum-specific KM estimates.
 #'
 #' @return `data_long_fg` with an additional column `p_notcens_after_death`.
@@ -409,12 +409,12 @@ fg_split <- function(data_long, covariate = "z1", event2_level = "event_2") {
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 100, censoring = "baseline")
 #' dat_long    <- wide_to_long_cr(dat)
-#' dat_long_fg <- fg_split(dat_long)
-#' dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
+#' dat_long_fg <- fg_split_cr(dat_long)
+#' dat_long_fg <- add_fg_weights_cr(dat_long_fg, strat = "no")
 #' summary(dat_long_fg$p_notcens_after_death)
 #'
 #' @export
-add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
+add_fg_weights_cr <- function(data_long_fg, covariate = "z1", strat = "no") {
   temp <- data.frame(
     tstart = data_long_fg$event2_time,
     tstop  = data_long_fg$tstart,
@@ -430,7 +430,7 @@ add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
     ref_data <- data_long_fg[data_long_fg$tstart < data_long_fg$event2_time |
                                is.na(data_long_fg$event2_time), ]
     temp$p_notcens_after_death[still_na] <-
-      add_ipcw_weights(ref_data, covariate = covariate, strat = strat,
+      add_ipcw_weights_cr(ref_data, covariate = covariate, strat = strat,
                        new_data = temp[still_na, ],
                        by.start = FALSE)$p_notcens
   }
@@ -443,7 +443,7 @@ add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
 #' Naive Fine-Gray sub-distribution hazard regression
 #'
 #' Fits a Fine-Gray model using the standard [survival::finegray()] approach,
-#' without any IPCW adjustment. Serves as a comparison to [fg_weighted()].
+#' without any IPCW adjustment. Serves as a comparison to [fg_weighted_cr()].
 #'
 #' @param dat A wide-format competing risks data frame containing the columns
 #'   specified by `time_var`, `event_var`, and `covariate`.
@@ -460,11 +460,11 @@ add_fg_weights <- function(data_long_fg, covariate = "z1", strat = "no") {
 #' @examples
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 200, censoring = "independent")
-#' fg_naive(dat)
+#' fg_naive_cr(dat)
 #'
 #' @importFrom survival finegray coxph Surv
 #' @export
-fg_naive <- function(dat, time_var = "t", event_var = "delta",
+fg_naive_cr <- function(dat, time_var = "t", event_var = "delta",
                      covariate = "z1") {
   fg_formula  <- as.formula(paste0("Surv(", time_var, ", ", event_var, ") ~ ."))
   pdata <- finegray(fg_formula, data = dat, timefix = FALSE)
@@ -484,7 +484,7 @@ fg_naive <- function(dat, time_var = "t", event_var = "delta",
 #' `cluster(id)`.
 #'
 #' @param data_long_fg A data frame in Fine-Gray format with weights, as
-#'   returned by [add_fg_weights()].
+#'   returned by [add_fg_weights_cr()].
 #' @param covariate Character string. Name of the covariate column. Default is
 #'   `"z1"`.
 #' @param extend Logical. If `FALSE`, data are truncated at the minimum of the
@@ -499,13 +499,13 @@ fg_naive <- function(dat, time_var = "t", event_var = "delta",
 #' set.seed(42)
 #' dat <- sim_data_cr(n = 200, censoring = "baseline")
 #' dat_long    <- wide_to_long_cr(dat)
-#' dat_long_fg <- fg_split(dat_long)
-#' dat_long_fg <- add_fg_weights(dat_long_fg, strat = "no")
-#' fg_weighted(dat_long_fg)
+#' dat_long_fg <- fg_split_cr(dat_long)
+#' dat_long_fg <- add_fg_weights_cr(dat_long_fg, strat = "no")
+#' fg_weighted_cr(dat_long_fg)
 #'
 #' @importFrom survival coxph Surv
 #' @export
-fg_weighted <- function(data_long_fg, covariate = "z1", extend = TRUE,
+fg_weighted_cr <- function(data_long_fg, covariate = "z1", extend = TRUE,
                          event1_level = "event_1") {
   if (!extend) {
     cov_levels <- levels(data_long_fg[[covariate]])

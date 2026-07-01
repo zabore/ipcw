@@ -54,14 +54,14 @@ reference:
       regression, and weighted Kaplan-Meier curves.
     contents:
       - sim_data_se
-      - get_ipcw_wgt
-      - get_ipcw_cox_fit
-      - get_ipcw_km_prob_x
-      - get_cox_fit
-      - get_boot_var
-      - get_boot_pci
-      - get_ipcw_boot
-      - plot_ipcw_km_boot_ci
+      - get_ipcw_wgt_se
+      - get_ipcw_cox_fit_se
+      - get_ipcw_km_prob_x_se
+      - get_cox_fit_se
+      - get_boot_var_se
+      - get_boot_pci_se
+      - get_ipcw_boot_se
+      - plot_ipcw_km_boot_ci_se
       - cox_boot_lhr
   - title: "Competing-risks IPCW"
     desc: >
@@ -71,11 +71,11 @@ reference:
     contents:
       - sim_data_cr
       - wide_to_long_cr
-      - add_ipcw_weights
-      - cuminc_naive
-      - cuminc_waverage
-      - cuminc_ipcw
-      - fg_split
-      - add_fg_weights
-      - fg_naive
-      - fg_weighted
+      - add_ipcw_weights_cr
+      - cuminc_naive_cr
+      - cuminc_waverage_cr
+      - cuminc_ipcw_cr
+      - fg_split_cr
+      - add_fg_weights_cr
+      - fg_naive_cr
+      - fg_weighted_cr
