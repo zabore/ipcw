@@ -28,7 +28,7 @@ A data frame with one row per term containing:
 \description{
 Convenience wrapper around \code{\link[survival:coxph]{survival::coxph()}} using counting-process
 (\code{tstart}, \code{tstop}) time variables. Returns log-hazard ratio estimates with
-standard errors and the exponentiated hazard ratio with 95\% confidence
+standard errors and the hazard ratio with 95\% confidence
 intervals.
 }
 \examples{

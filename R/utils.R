@@ -12,6 +12,7 @@ utils::globalVariables(c(
   "event2_time", "fgwt",
   # broom column names returned as data frames
   "estimate", "std.error", "robust.se", "conf.low", "conf.high",
-  # plot_ipcw_km_boot_ci columns used as bare names in dplyr/ggplot2
-  "surv", "time", "lpci", "upci"
+  # plot_ipcw_km_boot_ci_se / plot_ipcw_cuminc_boot_ci_cr columns used as
+  # bare names in dplyr/ggplot2
+  "surv", "time", "lpci", "upci", "est"
 ))

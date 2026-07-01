@@ -102,3 +102,39 @@ test_that("fg_weighted_cr returns a matrix with correct dimensions", {
   expect_equal(ncol(result), 2)
   expect_equal(nrow(result), 3)
 })
+
+test_that("get_ipcw_boot_cr returns a list of long-format weighted data frames", {
+  boot_list <- get_ipcw_boot_cr(dat_cr, B = 3, strat = "no", seed = 1)
+
+  expect_length(boot_list, 3)
+  expect_true(all(vapply(boot_list, is.data.frame, logical(1))))
+  expect_true(all(vapply(boot_list, function(x) "p_notcens" %in% names(x), logical(1))))
+})
+
+test_that("get_boot_pci_cr returns a 2-row matrix with lower < upper", {
+  set.seed(1)
+  boot_mat <- matrix(rnorm(500 * 3, mean = 0.5, sd = 0.2), nrow = 500, ncol = 3)
+  result   <- get_boot_pci_cr(boot_mat)
+
+  expect_true(is.matrix(result))
+  expect_equal(dim(result), c(2, 3))
+  expect_equal(rownames(result), c("lower", "upper"))
+  expect_true(all(result["lower", ] < result["upper", ]))
+})
+
+test_that("get_boot_pci_cr returns NA for columns with any NA", {
+  boot_mat <- matrix(c(rnorm(500), rep(NA, 500)), nrow = 500, ncol = 2)
+  result   <- get_boot_pci_cr(boot_mat)
+
+  expect_true(all(is.na(result[, 2])))
+  expect_true(all(!is.na(result[, 1])))
+})
+
+test_that("plot_ipcw_cuminc_boot_ci_cr returns a ggplot object", {
+  dat_long  <- add_ipcw_weights_cr(wide_to_long_cr(dat_cr), strat = "no")
+  boot_list <- get_ipcw_boot_cr(dat_cr, B = 3, strat = "no", seed = 1)
+  esttimes  <- seq(0, 5, 1)
+  result    <- plot_ipcw_cuminc_boot_ci_cr(boot_list, dat_long, esttimes = esttimes)
+
+  expect_s3_class(result, "ggplot")
+})

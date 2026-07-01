@@ -386,6 +386,10 @@ fg_split_cr <- function(data_long, covariate = "z1", event2_level = "event_2") {
   fulldat <- fulldat[fulldat$event2_time < fulldat$tstop, ]
   fulldat$tstart[fulldat$event2_time > fulldat$tstart] <-
     fulldat$event2_time[fulldat$event2_time > fulldat$tstart]
+
+  missing_cols <- setdiff(names(data_long), names(fulldat))
+  fulldat[missing_cols] <- NA
+
   fulldat <- rbind(data_long, fulldat[names(data_long)])
   fulldat[order(fulldat$id, fulldat$tstart), ]
 }
@@ -532,4 +536,155 @@ fg_weighted_cr <- function(data_long_fg, covariate = "z1", extend = TRUE,
     timefix = FALSE
   )
   summary(m1)$coef[, c(1, 4)]
+}
+
+
+#' Compute bootstrap percentile confidence intervals for competing risks estimates
+#'
+#' Computes the 2.5th and 97.5th percentiles of the bootstrap distribution for
+#' each column of a matrix of bootstrap estimates. Intended for competing
+#' risks quantities (e.g. cumulative incidence at a set of time points, or
+#' Fine-Gray regression terms), where each bootstrap replicate produces more
+#' than one estimate, unlike the single scalar log hazard ratio handled by
+#' [get_boot_pci_se()].
+#'
+#' @param boot_mat A numeric matrix of bootstrap estimates, with one row per
+#'   bootstrap replicate and one column per estimand (e.g. time point or
+#'   regression term), as returned by row-binding the results of multiple
+#'   calls to [cuminc_waverage_cr()], [cuminc_ipcw_cr()], or [fg_weighted_cr()].
+#'
+#' @return A 2-row numeric matrix with rows `"lower"` and `"upper"` giving the
+#'   2.5th and 97.5th percentiles of the bootstrap distribution for each
+#'   column of `boot_mat`. Columns with any `NA` bootstrap estimate return
+#'   `NA` for both bounds.
+#'
+#' @examples
+#' set.seed(1)
+#' boot_mat <- matrix(rnorm(500 * 3), nrow = 500, ncol = 3)
+#' get_boot_pci_cr(boot_mat)
+#'
+#' @importFrom stats quantile
+#' @export
+get_boot_pci_cr <- function(boot_mat) {
+  result <- apply(boot_mat, 2, function(x) {
+    if (any(is.na(x))) c(NA_real_, NA_real_) else quantile(x, c(0.025, 0.975), names = FALSE)
+  })
+  rownames(result) <- c("lower", "upper")
+  result
+}
+
+
+#' Bootstrap IPCW weighted data for competing risks survival analysis
+#'
+#' Draws `B` bootstrap samples from the original wide-format competing risks
+#' data, converts each sample to long (counting-process) format via
+#' [wide_to_long_cr()], and appends IPCW weights via [add_ipcw_weights_cr()].
+#' Returns the results as a list of long-format data frames that can be used
+#' directly with [cuminc_ipcw_cr()], or further processed with
+#' [fg_split_cr()] and [add_fg_weights_cr()] for a Fine-Gray bootstrap.
+#'
+#' @param data A wide-format competing risks data frame containing the
+#'   columns specified by `time_var`, `event_var`, and `covariate`.
+#' @param B Integer. Number of bootstrap samples. Default is `500`.
+#' @param time_var Character string. Name of the event/censoring time column.
+#'   Default is `"t"`.
+#' @param event_var Character string. Name of the event indicator column.
+#'   Default is `"delta"`.
+#' @param covariate Character string. Name of the covariate column. Default
+#'   is `"z1"`.
+#' @param cens_level Character string. Factor level in `event_var`
+#'   representing censoring. Default is `"censor"`.
+#' @param event2_level Character string. Factor level in `event_var`
+#'   representing the competing event (event type 2). Default is
+#'   `"event_2"`.
+#' @param strat Character. Passed to [add_ipcw_weights_cr()]. `"no"`
+#'   (default) fits a single Cox model for the censoring distribution;
+#'   `"yes"` estimates the censoring distribution non-parametrically within
+#'   each stratum of `covariate`.
+#' @param seed Optional integer seed for reproducibility. Default is `NULL`.
+#'
+#' @return A list of `B` data frames, each in long (counting-process) format
+#'   with an IPCW weight column `p_notcens`, as returned by
+#'   [add_ipcw_weights_cr()].
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(42)
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
+#' boot_list <- get_ipcw_boot_cr(dat, B = 50)
+#' }
+#'
+#' @export
+get_ipcw_boot_cr <- function(data, B = 500, time_var = "t", event_var = "delta",
+                              covariate = "z1", cens_level = "censor",
+                              event2_level = "event_2", strat = "no",
+                              seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  lapply(seq_len(B), function(i) {
+    boot_dat <- data[sample(nrow(data), nrow(data), replace = TRUE), ]
+    dat_long <- wide_to_long_cr(boot_dat, time_var = time_var,
+                                 event_var = event_var, covariate = covariate,
+                                 cens_level = cens_level,
+                                 event2_level = event2_level)
+    add_ipcw_weights_cr(dat_long, covariate = covariate, strat = strat)
+  })
+}
+
+
+#' Plot IPCW cumulative incidence with bootstrap percentile confidence intervals
+#'
+#' Combines bootstrap cumulative incidence curves from [get_ipcw_boot_cr()]
+#' with the point estimate from the original IPCW-weighted data to produce a
+#' cumulative incidence plot with 95% percentile confidence intervals,
+#' mirroring [plot_ipcw_km_boot_ci_se()] for the single-event case.
+#'
+#' @param boot_data A list of long-format data frames with IPCW weights, as
+#'   returned by [get_ipcw_boot_cr()].
+#' @param orig_data A single long-format data frame with IPCW weights for the
+#'   original (non-bootstrapped) dataset, as returned by
+#'   [add_ipcw_weights_cr()]. Used for the point estimate.
+#' @param esttimes Numeric vector of times at which to evaluate cumulative
+#'   incidence. Defaults to 100 equally spaced points from 0 to 10.
+#' @param extend Logical. Passed to [cuminc_ipcw_cr()]. Default is `TRUE`.
+#' @param covariate Character string. Name of the covariate column, used only
+#'   when `extend = FALSE` to compute the truncation time. Default is `"z1"`.
+#'
+#' @return A [ggplot2::ggplot()] object. Add layers or themes to customise.
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(42)
+#' dat <- sim_data_cr(n = 200, censoring = "baseline")
+#' dat_long  <- add_ipcw_weights_cr(wide_to_long_cr(dat), strat = "no")
+#' boot_list <- get_ipcw_boot_cr(dat, B = 50)
+#' plot_ipcw_cuminc_boot_ci_cr(boot_list, dat_long, esttimes = seq(0, 5, 0.1))
+#' }
+#'
+#' @importFrom ggplot2 ggplot aes geom_step geom_ribbon labs theme_minimal
+#' @export
+plot_ipcw_cuminc_boot_ci_cr <- function(boot_data, orig_data,
+                                         esttimes = seq(from = 0, to = 10, length.out = 100),
+                                         extend = TRUE, covariate = "z1") {
+  boot_mat <- t(vapply(boot_data, function(x) {
+    cuminc_ipcw_cr(x, esttimes = esttimes, extend = extend, covariate = covariate)
+  }, numeric(length(esttimes))))
+
+  pci <- get_boot_pci_cr(boot_mat)
+
+  orig_est <- cuminc_ipcw_cr(orig_data, esttimes = esttimes, extend = extend,
+                              covariate = covariate)
+
+  plot_dat <- data.frame(
+    time = esttimes,
+    est  = orig_est,
+    lpci = pci["lower", ],
+    upci = pci["upper", ]
+  )
+
+  ggplot(plot_dat, aes(x = time)) +
+    geom_ribbon(aes(ymin = lpci, ymax = upci), alpha = 0.2, linetype = "blank") +
+    geom_step(aes(y = est)) +
+    labs(x = "Time", y = "Cumulative incidence") +
+    theme_minimal()
 }

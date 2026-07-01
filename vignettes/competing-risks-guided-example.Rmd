@@ -14,57 +14,50 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette demonstrates IPCW methods for competing risks data. We simulate
-a prostate cancer dataset where metastasis (event_1) and death (event_2) are
-competing risks, and PSA quartile at baseline (`z1`) both predicts metastasis
-risk and drives informative censoring.
+This vignette demonstrates IPCW methods for competing risks data. We use a simulated dataset in line with an observational clinical setting where participants are followed for metastasis after undergoing radical prostatectomy. We consider metastasis and death to be competing events. We wish to understand how patterns of metastasis vary by the level of prostate specific antigen (PSA) measured immediately after surgery (referred to as baseline PSA).  Participants are censored when they stop attending follow-up visits at the cancer center where they had their prostatectomy and resume visiting their primary care doctor. Dependent censoring arises because participants with a higher baseline PSA are less likely to be censored and more likely to experience metastasis. 
 
 ## Setup
 
 ```{r packages, message = FALSE, warning = FALSE}
+# Install packages if needed
+# install.packages(c("survival", "purrr", "ggplot2", "gt", "tibble"))
+# install.packages("pak")
+# pak::pak("zabore/ipcw")
+
 library(ipcw)
 library(survival)
 library(ggplot2)
 library(purrr)
+library(gt)
+library(tibble)
 ```
 
-## Simulate data
+## Simulate data and compute IPCW weights
 
-`sim_data_cr()` generates competing risks data under a sub-distribution hazard
-model. The covariate `z1` is a four-level factor (PSA quartile). We use
-baseline-dependent censoring so that censoring is informative.
+First, create a simulated dataset of `n=500` patients using the `sim_data_cr()` function. We use
+baseline-dependent censoring so that censoring is informative, and keep other parameters besides n at the default values:
 
 ```{r simulate}
 set.seed(9843)
-dat <- sim_data_cr(
-  n          = 500,
-  censoring  = "baseline",
-  beta1      = log(1.5),
-  beta2      = log(2.25),
-  beta3      = log(3.4),
-  p          = 0.3
-)
-table(dat$delta)
+
+dat <- 
+  sim_data_cr(
+    n = 500,
+    censoring = "baseline",
+    beta1 = log(1.5),
+    beta2 = log(2.25),
+    beta3 = log(3.4),
+    p = 0.3
+    )
 ```
 
-## Explore the data
+Key columns in the simulated data include:
 
-```{r explore, fig.width = 6, fig.height = 4}
-# Cumulative incidence by PSA quartile
-plot(survfit(Surv(t, delta) ~ z1, data = dat),
-     col = 1:4, lty = rep(1:2, each = 4),
-     xlab = "Time", ylab = "Probability")
-legend("topleft", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
-```
+- `z1`: baseline PSA quartile (0 = lowest, 3 = highest)
+- `delta`: event indicator (1 = metastasis, 2 = death, 0 = censored)
+- `t`: observed time (event or censoring)
 
-```{r censoring-dist, fig.width = 6, fig.height = 4}
-# Censoring distribution by PSA quartile
-plot(survfit(Surv(t, delta == "censor") ~ z1, data = dat),
-     col = 1:4, xlab = "Time", ylab = "P(not censored)")
-legend("topright", legend = paste("z1 =", 0:3), col = 1:4, lty = 1, bty = "n")
-```
-
-## Convert to long format and add IPCW weights
+`wide_to_long_cr()` converts the data to long format, which is required for IPCW estimation. The `add_ipcw_weights_cr()` function computes IPCW weights for competing risks data. The `strat` argument specifies whether to use stratified (non-parametric) weights (when `strat = "yes"`) or Cox model weights (when `strat = "no"`).
 
 ```{r long-format}
 dat_long <- wide_to_long_cr(dat)
@@ -76,40 +69,58 @@ dat_long_cox <- add_ipcw_weights_cr(dat_long, strat = "no")
 dat_long_strat <- add_ipcw_weights_cr(dat_long, strat = "yes")
 ```
 
-```{r weight-histogram, fig.width = 5, fig.height = 3}
-ggplot(dat_long_strat, aes(x = 1 / p_notcens)) +
-  geom_histogram(bins = 40) +
-  xlab("IPCW weight") + ylab("Count") +
-  theme_bw()
-```
-
-## Estimate cumulative incidence
+## IPCW cumulative incidence curves
 
 ```{r cuminc}
+# Get an ordered vector of times
 esttimes <- sort(dat$t)
 
-ci_naive   <- cuminc_naive_cr(dat, esttimes)
-ci_wavg    <- cuminc_waverage_cr(dat, esttimes)
-ci_cox     <- cuminc_ipcw_cr(dat_long_cox, esttimes)
+# Estimate cumulative incidence using the stratified (non-parametric) IPCW
+ci_strat <- cuminc_waverage_cr(dat, esttimes)
+
+# Estimate cumulative incidence using the Cox model IPCW
+ci_cox <- cuminc_ipcw_cr(dat_long_cox, esttimes)
 ```
+
 
 ```{r cuminc-plot, fig.width = 6, fig.height = 4}
-to_plot <- rbind(
-  data.frame(time = esttimes, est = ci_wavg, method = "Weighted average"),
-  data.frame(time = esttimes, est = ci_cox,  method = "Cox IPCW")
-)
+# Combine the two sets of weights for plotting
+to_plot <- 
+  rbind(
+    data.frame(time = esttimes, est = ci_strat, method = "Weighted average"),
+    data.frame(time = esttimes, est = ci_cox,  method = "Cox IPCW")
+    )
 
-ggplot(to_plot, aes(x = time, y = est, colour = method)) +
+ggplot(to_plot, aes(x = time, y = est, 
+                    color = method, linetype = method, linewidth = method)) +
   geom_step() +
-  xlim(0, 5) + ylim(0, 0.65) +
-  xlab("Time") + ylab("Cumulative incidence of event 1") +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom", legend.title = element_blank())
+  scale_color_manual(values = c("#f08122", "#5c2161")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  scale_linewidth_manual(values = c(0.8, 1.1)) +
+  xlim(0, 5) + 
+  ylim(0, 1) +
+  labs(
+    x = "Time",
+    y = "Cumulative incidence of metastasis"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom", 
+    legend.title = element_blank()
+    )
 ```
+
+The two sets of weights result in nearly identical weighted cumulative incidence curves in this example.
+
 
 ## Fine-Gray IPCW regression
 
+Next, estimate the subdistribution hazard ratio (SHR) for the association between baseline PSA and metastasis, accounting for the competing risk of death and dependent censoring. 
+
+The `fg_split_cr()` function splits the data into event-specific datasets, and the `add_fg_weights_cr()` function computes IPCW weights for Fine-Gray regression. The `fg_weighted_cr()` function fits a weighted Fine-Gray model.
+
 ```{r fine-gray}
+# Split the data into event-specific datasets for Fine-Gray regression
 dat_long_fg <- fg_split_cr(dat_long)
 
 # Stratified weights
@@ -121,47 +132,102 @@ exp(fg_strat[, 1])   # exponentiated coefficients
 dat_long_fg_cox <- add_fg_weights_cr(dat_long_fg, strat = "no")
 fg_cox <- fg_weighted_cr(dat_long_fg_cox)
 exp(fg_cox[, 1])
+
+# Table of results
+tibble(
+    Method = rep(c("Fine-Gray stratified", "Fine-Gray Cox"), each = 3),
+    Effect = rep(c("PSA Q2 vs Q1", "PSA Q3 vs Q1", "PSA Q4 vs Q1"), 2),
+    Estimate = c(exp(fg_strat[, 1]), exp(fg_cox[, 1]))
+  ) |> 
+  gt() |> 
+  fmt_number(columns = "Estimate", decimals = 2) |>
+  tab_header("IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights") 
 ```
 
 ## Bootstrap standard errors
 
-Bootstrap resampling provides valid standard errors when the weights are
-estimated. The example below uses 500 samples; run in parallel as needed.
+Bootstrap resampling provides valid standard errors when the weights are estimated. `get_ipcw_boot_cr()` draws bootstrap samples from the wide-format data, converts each to long format, and appends IPCW weights in one step, mirroring `get_ipcw_boot_se()` for the single-event case. Its `strat` argument controls the weight type, matching `add_ipcw_weights_cr()`. Because this process takes some time, the resulting object `fg_strat_boot` is included in this package.
 
-```{r bootstrap, eval = FALSE}
-set.seed(20240917)
+```{r fg-boot-fit, eval = FALSE}
+# Bootstrap samples with Cox IPCW weights
+boot_dat_long <- get_ipcw_boot_cr(dat, B = 500, strat = "no", seed = 20240917)
 
-boot_dat      <- map(1:500, ~ slice_sample(dat, prop = 1, replace = TRUE))
-boot_dat      <- map(boot_dat, function(x) { x$id <- seq_len(nrow(x)); x })
-boot_dat_long <- map(boot_dat, wide_to_long_cr)
+# Fit the stratified Fine-Gray model to each bootstrap sample
+fg_strat_boot <- 
+  map(
+    boot_dat_long, 
+    ~ fg_weighted_cr(
+      add_fg_weights_cr(fg_split_cr(.), strat = "yes"), extend = FALSE)[, 1]
+    )
 
-# Weighted-average cumulative incidence bootstrap
-w_avg_boot <- map(boot_dat, ~ cuminc_waverage_cr(., esttimes))
-w_avg_boot <- matrix(unlist(w_avg_boot), ncol = length(esttimes), byrow = TRUE)
-lower_wavg  <- apply(w_avg_boot, 2, function(x)
-                 ifelse(any(is.na(x)), NA, quantile(x, 0.025)))
-upper_wavg  <- apply(w_avg_boot, 2, function(x)
-                 ifelse(any(is.na(x)), NA, quantile(x, 0.975)))
-
-# Cox IPCW cumulative incidence bootstrap
-cox_boot      <- map(boot_dat_long, ~ cuminc_ipcw_cr(add_ipcw_weights_cr(., strat = "no"), esttimes))
-cox_boot      <- matrix(unlist(cox_boot), ncol = length(esttimes), byrow = TRUE)
-lower_cox     <- apply(cox_boot, 2, function(x)
-                   ifelse(any(is.na(x)), NA, quantile(x, 0.025)))
-upper_cox     <- apply(cox_boot, 2, function(x)
-                   ifelse(any(is.na(x)), NA, quantile(x, 0.975)))
-
-# Fine-Gray stratified bootstrap
-boot_dat_fg   <- map(boot_dat_long, fg_split_cr)
-fg_strat_boot <- map(boot_dat_fg, ~ fg_weighted_cr(add_fg_weights_cr(., strat = "yes"),
-                                                 extend = FALSE)[, 1])
 fg_strat_boot <- matrix(unlist(fg_strat_boot), ncol = 3, byrow = TRUE)
-lower_fg_strat <- apply(fg_strat_boot, 2, function(x)
-                     ifelse(any(is.na(x)), NA, quantile(x, 0.025)))
-upper_fg_strat <- apply(fg_strat_boot, 2, function(x)
-                     ifelse(any(is.na(x)), NA, quantile(x, 0.975)))
+```
 
-exp(fg_strat[, 1])
-exp(lower_fg_strat)
-exp(upper_fg_strat)
+```{r echo = FALSE}
+data(fg_strat_boot)
+```
+
+`get_boot_pci_cr()` then computes the bootstrap percentile interval for each column of a matrix of bootstrap estimates, mirroring `get_boot_pci_se()` for the single-event case.
+
+```{r fg-boot-pci}
+pci_fg_strat <- get_boot_pci_cr(fg_strat_boot)
+
+
+result_tab <- data.frame(
+  Effect = c("PSA Q2 vs Q1", "PSA Q3 vs Q1", "PSA Q4 vs Q1"),
+  Estimate = exp(fg_strat[, 1]),
+  Lower_95pct_PI = exp(pci_fg_strat["lower", ]),
+  Upper_95pct_PI = exp(pci_fg_strat["upper", ])
+)
+
+result_tab |> 
+  gt() |> 
+  fmt_number(
+    columns = c("Estimate", "Lower_95pct_PI", "Upper_95pct_PI"), 
+    decimals = 2) |> 
+  cols_label(
+    Lower_95pct_PI = "Lower 95% PI",
+    Upper_95pct_PI = "Upper 95% PI"
+  ) |> 
+  # Add a footnote
+  tab_footnote(
+    footnote = "PI = percentile interval",
+    locations = cells_column_labels(columns = c(Lower_95pct_PI, Upper_95pct_PI))
+  ) |> 
+  tab_header(
+    "IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights"
+  )
+```
+
+The bootstrap logic can be generalized to any competing risks quantity that returns a vector or matrix of estimates. For example, `plot_ipcw_cuminc_boot_ci_cr()` combines the bootstrap samples from `get_ipcw_boot_cr()` with the Cox IPCW cumulative incidence estimate to produce a cumulative incidence plot with bootstrap percentile confidence intervals, mirroring `plot_ipcw_km_boot_ci_se()` for the single-event case. Bootstrapping the data and then generating the pointwise confidence intervals is time consuming, and the below code is not evaluated here. The following plot is an IPCW weighted cumulative incidence of metastatis, using the Cox model weights, with bootstrap confidence intervals.
+
+```{r cuminc-boot-plot, eval = FALSE}
+boot_dat_long <- 
+  get_ipcw_boot_cr(
+    dat, 
+    B = 500, 
+    strat = "no", 
+    seed = 20240917)
+
+plot_base <- 
+  plot_ipcw_cuminc_boot_ci_cr(
+    boot_dat_long, 
+    dat_long_cox, 
+    esttimes = esttimes)
+
+plot_base +
+  scale_x_continuous(breaks = seq(1, 6, 1)) + 
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(
+    x = "Time",
+    y = "Cumulative incidence of metastasis"
+  ) 
+```
+
+```{r boot-plot-save, include = FALSE, eval = FALSE}
+ggsave("vignettes/ipcw_cr_boot_ci.png", width = 6, height = 4)
+```
+
+```{r boot-plot-show, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("ipcw_cr_boot_ci.png")
 ```

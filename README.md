@@ -26,49 +26,73 @@ pak::pak("zabore/ipcw")
 
 ## Example
 
-Dependent censoring can bias standard survival estimates. The examples
-below use the package’s simulated example datasets to compare unadjusted
-estimates to IPCW-adjusted estimates, for both a single event and
-competing risks.
+Dependent censoring occurs when participants who are censored at any
+point in time are more, or less, likely to have an event going forward
+as compared to the participants who remain in the study. This leads to
+the distribution of residual time to the event of interest being
+different in censored and uncensored populations. Dependent censoring
+can bias standard survival estimates. The examples below use the ipcw
+package’s simulated example datasets to compare unadjusted estimates to
+IPCW-adjusted estimates, for both a single event and competing risks.
+
+``` r
+# Install packages if needed
+# install.packages(c(""survival", "ggsurvfit", "dplyr"))
+# install.packages("pak")
+# pak::pak("zabore/ipcw")
+
+# Load packages
+library(ipcw)
+library(survival)
+library(ggsurvfit)
+library(dplyr)
+```
 
 ### Single event
 
-``` r
-library(ipcw)
-library(survival)
+In this example there is a single event type, and one covariate of
+interest, x.
 
-set.seed(20240429)
+``` r
+set.seed(67)
+
 dat <- sim_data_se(n = 500)
 
 # Unadjusted (naive) Kaplan-Meier, ignoring dependent censoring
-naive_fit <- survfit(Surv(t, delta) ~ x, data = dat)
+naive_fit <- 
+  survfit(
+    Surv(t, delta) ~ x, 
+    data = dat)
+
+# Convert to counting-process (long) format and compute IPCW
+dat_long <- get_ipcw_wgt_se(dat)
 
 # IPCW-adjusted Kaplan-Meier
-dat_long <- get_ipcw_wgt_se(dat)
-ipcw_fit <- survfit(Surv(tstart, tstop, delta) ~ x, data = dat_long,
-                     weights = wgt, timefix = FALSE)
-
-layout(matrix(1:2, nrow = 2), heights = c(5, 1))
-par(mar = c(4, 4, 1, 1))
-plot(naive_fit, col = c("#0078bf", "#f08122"), lty = 1, lwd = 2,
-     xlab = "Days", ylab = "Survival probability")
-lines(ipcw_fit, col = c("#0078bf", "#f08122"), lty = 2, lwd = 2)
-par(mar = c(0, 0, 0, 0))
-plot.new()
-legend("center", legend = c("Chemotherapy", "TKI", "Unadjusted", "IPCW-adjusted"),
-       col = c("#0078bf", "#f08122", "black", "black"),
-       lty = c(1, 1, 1, 2), lwd = 2, ncol = 2, bty = "n")
+ipcw_fit <- 
+  survfit(
+    Surv(tstart, tstop, delta) ~ x, 
+    data = dat_long,
+    weights = wgt, 
+    timefix = FALSE)
 ```
 
-<img src="man/figures/README-se-example-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" />
 
-See `vignette("single-event-guided-example")` for the full walkthrough,
-including bootstrap confidence intervals and Cox regression.
+Note that this plot is for demonstration purposes only. In practice,
+when dependent censoring is present only the IPCW-adjusted curves would
+be of interest. In this example, we see that the unadjusted estimates
+over-estimate the survival probability in both groups, and adjustment
+for dependent censoring corrects for this. See
+`vignette("single-event-guided-example")` for a thorough demonstration
+of the methods implemented in this package for single event settings,
+including bootstrap confidence intervals for the IPCW-adjusted
+Kaplan-Meier curves and Cox regression.
 
 ### Competing risks
 
 ``` r
 set.seed(9843)
+
 dat_cr <- sim_data_cr(n = 500, censoring = "baseline")
 
 esttimes <- seq(0, 5, 0.1)
@@ -76,24 +100,19 @@ esttimes <- seq(0, 5, 0.1)
 # Unadjusted (naive) cumulative incidence, ignoring dependent censoring
 ci_naive <- cuminc_naive_cr(dat_cr, esttimes)
 
-# IPCW-adjusted cumulative incidence
+# Convert to counting-process (long) format and compute IPCW
 dat_long_cr <- add_ipcw_weights_cr(wide_to_long_cr(dat_cr), strat = "no")
-ci_ipcw     <- cuminc_ipcw_cr(dat_long_cr, esttimes)
 
-layout(matrix(1:2, nrow = 2), heights = c(5, 1))
-par(mar = c(4, 4, 1, 1))
-plot(esttimes, ci_naive, type = "s", col = "#4b4b45", lty = 1, lwd = 2,
-     xlab = "Time", ylab = "Cumulative incidence of event 1",
-     ylim = c(0, max(ci_naive, ci_ipcw, na.rm = TRUE)))
-lines(esttimes, ci_ipcw, type = "s", col = "#4b4b45", lty = 2, lwd = 2)
-par(mar = c(0, 0, 0, 0))
-plot.new()
-legend("center", legend = c("Unadjusted", "IPCW-adjusted"),
-       col = "#4b4b45", lty = c(1, 2), lwd = 2, ncol = 2, bty = "n")
+# IPCW-adjusted cumulative incidence
+ci_ipcw     <- cuminc_ipcw_cr(dat_long_cr, esttimes)
 ```
 
-<img src="man/figures/README-cr-example-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
 
-See `vignette("competing-risks-guided-example")` for the full
-walkthrough, including Fine-Gray regression and bootstrap standard
+In this example, we see that the unadjusted estimates overestimate the
+cumulative incidence of event 1 in the presence of the competing risk of
+event 2. Adjustment for dependent censoring through weighting corrects
+this. See `vignette("competing-risks-guided-example")` for a thorough
+demonstration of the methods implemented in this package for competing
+risks settings, including Fine-Gray regression and bootstrap standard
 errors.

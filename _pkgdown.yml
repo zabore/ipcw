@@ -79,3 +79,7 @@ reference:
       - add_fg_weights_cr
       - fg_naive_cr
       - fg_weighted_cr
+      - get_ipcw_boot_cr
+      - get_boot_pci_cr
+      - plot_ipcw_cuminc_boot_ci_cr
+      - fg_strat_boot

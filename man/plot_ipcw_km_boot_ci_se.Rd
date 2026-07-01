@@ -43,10 +43,12 @@ plot with 95\% percentile confidence intervals.
 }
 \examples{
 \dontrun{
+# Not run due to computational time. 
+# Use a smaller n and/or smaller B for testing.
 set.seed(1)
-dat      <- sim_data_se(n = 200)
+dat      <- sim_data_se(n = 500)
 dat_long <- get_ipcw_wgt_se(dat)
-boot_list <- get_ipcw_boot_se(dat, B = 50)
+boot_list <- get_ipcw_boot_se(dat, B = 500)
 plot_ipcw_km_boot_ci_se(boot_list, dat_long, pre_times = seq(0, 500, 10))
 }
 

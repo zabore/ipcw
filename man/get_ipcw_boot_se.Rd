@@ -42,10 +42,10 @@ list of long-format data frames. The list can be passed to
 quantities (e.g. Cox hazard ratios via \code{\link[=get_ipcw_cox_fit_se]{get_ipcw_cox_fit_se()}}).
 }
 \examples{
-\dontrun{
+# Toy example with only 10 bootstrap samples
 set.seed(1)
 dat <- sim_data_se(n = 200)
-boot_list <- get_ipcw_boot_se(dat, B = 50)
-}
+boot_list <- get_ipcw_boot_se(dat, B = 10)
+
 
 }
