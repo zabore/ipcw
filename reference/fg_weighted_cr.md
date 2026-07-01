@@ -47,14 +47,13 @@ hazard ratio and its robust standard error.
 
 ``` r
 set.seed(42)
-dat <- sim_data_cr(n = 200, censoring = "baseline")
+dat <- sim_data_cr(n = 300, censoring = "baseline")
 dat_long    <- wide_to_long_cr(dat)
 dat_long_fg <- fg_split_cr(dat_long)
 dat_long_fg <- add_fg_weights_cr(dat_long_fg, strat = "no")
-#> Warning: Loglik converged before variable  3 ; beta may be infinite. 
 fg_weighted_cr(dat_long_fg)
-#>         coef robust se
-#> z11 1.364480 0.5617613
-#> z12 1.798696 0.5626535
-#> z13 2.222293 0.5323173
+#>          coef robust se
+#> z11 0.9135669 0.3975405
+#> z12 1.3004739 0.3955882
+#> z13 1.4468114 0.3928682
 ```

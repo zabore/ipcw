@@ -3,8 +3,8 @@
 Convenience wrapper around
 [`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html) using
 counting-process (`tstart`, `tstop`) time variables. Returns log-hazard
-ratio estimates with standard errors and the exponentiated hazard ratio
-with 95% confidence intervals.
+ratio estimates with standard errors and the hazard ratio with 95%
+confidence intervals.
 
 ## Usage
 

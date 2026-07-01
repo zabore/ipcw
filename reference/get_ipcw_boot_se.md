@@ -62,9 +62,9 @@ returned by
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Toy example with only 10 bootstrap samples
 set.seed(1)
 dat <- sim_data_se(n = 200)
-boot_list <- get_ipcw_boot_se(dat, B = 50)
-} # }
+boot_list <- get_ipcw_boot_se(dat, B = 10)
+
 ```

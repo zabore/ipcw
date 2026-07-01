@@ -104,10 +104,12 @@ the long-format data. Default is <code>"delta"</code>.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Not run due to computational time. </span></span></span>
+<span class="r-in"><span><span class="co"># Use a smaller n and/or smaller B for testing.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_se.html">sim_data_se</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_se.html">sim_data_se</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_ipcw_wgt_se.html">get_ipcw_wgt_se</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">boot_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_ipcw_boot_se.html">get_ipcw_boot_se</a></span><span class="op">(</span><span class="va">dat</span>, B <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">boot_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_ipcw_boot_se.html">get_ipcw_boot_se</a></span><span class="op">(</span><span class="va">dat</span>, B <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plot_ipcw_km_boot_ci_se</span><span class="op">(</span><span class="va">boot_list</span>, <span class="va">dat_long</span>, pre_times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">500</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

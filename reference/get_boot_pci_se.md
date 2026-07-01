@@ -29,6 +29,6 @@ percentiles of the bootstrap distribution.
 ``` r
 boot_results <- data.frame(log_hr = rnorm(500, mean = -0.5, sd = 0.2))
 get_boot_pci_se(boot_results)
-#>       2.5%      97.5% 
-#> -0.9221499 -0.1397219 
+#>        2.5%       97.5% 
+#> -0.92922493 -0.09525084 
 ```

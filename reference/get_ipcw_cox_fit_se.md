@@ -2,8 +2,9 @@
 
 Fits a weighted Cox model with a robust sandwich variance and returns
 log-hazard ratio estimates together with both model-based and robust
-standard errors, plus the exponentiated hazard ratio and 95% confidence
-interval based on the robust standard error.
+standard errors, plus the hazard ratio and 95% confidence interval based
+on the robust standard error. Convenience wrapper for
+[`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html).
 
 ## Usage
 

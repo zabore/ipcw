@@ -68,8 +68,8 @@ percentiles of the bootstrap distribution.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">boot_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>log_hr <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">500</span>, mean <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span>, sd <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">get_boot_pci_se</span><span class="op">(</span><span class="va">boot_results</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       2.5%      97.5% </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.9221499 -0.1397219 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        2.5%       97.5% </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.92922493 -0.09525084 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

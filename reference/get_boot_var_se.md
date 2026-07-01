@@ -32,5 +32,5 @@ A single numeric value: the bootstrap variance estimate.
 # Toy example with 10 simulated bootstrap log HRs
 boot_results <- data.frame(log_hr = rnorm(10, mean = -0.5, sd = 0.2))
 get_boot_var_se(boot_results, B = 10)
-#> [1] 0.04568865
+#> [1] 0.05129527
 ```

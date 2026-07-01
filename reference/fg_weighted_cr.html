@@ -95,16 +95,15 @@ sub-distribution hazard ratio and its robust standard error.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_cr</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">200</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="sim_data_CR.html">sim_data_cr</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">300</span>, censoring <span class="op">=</span> <span class="st">"baseline"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat_long</span>    <span class="op">&lt;-</span> <span class="fu"><a href="wide_to_long_CR.html">wide_to_long_cr</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat_long_fg</span> <span class="op">&lt;-</span> <span class="fu"><a href="fg_split_cr.html">fg_split_cr</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat_long_fg</span> <span class="op">&lt;-</span> <span class="fu"><a href="add_fg_weights_cr.html">add_fg_weights_cr</a></span><span class="op">(</span><span class="va">dat_long_fg</span>, strat <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Loglik converged before variable  3 ; beta may be infinite. </span>
 <span class="r-in"><span><span class="fu">fg_weighted_cr</span><span class="op">(</span><span class="va">dat_long_fg</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         coef robust se</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> z11 1.364480 0.5617613</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> z12 1.798696 0.5626535</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> z13 2.222293 0.5323173</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          coef robust se</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> z11 0.9135669 0.3975405</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> z12 1.3004739 0.3955882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> z13 1.4468114 0.3928682</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -68,62 +68,70 @@
     
     
 <p>This vignette demonstrates IPCW methods for competing risks data. We
-simulate a prostate cancer dataset where metastasis (event_1) and death
-(event_2) are competing risks, and PSA quartile at baseline
-(<code>z1</code>) both predicts metastasis risk and drives informative
-censoring.</p>
+use a simulated dataset in line with an observational clinical setting
+where participants are followed for metastasis after undergoing radical
+prostatectomy. We consider metastasis and death to be competing events.
+We wish to understand how patterns of metastasis vary by the level of
+prostate specific antigen (PSA) measured immediately after surgery
+(referred to as baseline PSA). Participants are censored when they stop
+attending follow-up visits at the cancer center where they had their
+prostatectomy and resume visiting their primary care doctor. Dependent
+censoring arises because participants with a higher baseline PSA are
+less likely to be censored and more likely to experience metastasis.</p>
 <div class="section level2">
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.emilyzabor.com/ipcw">ipcw</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install packages if needed</span></span>
+<span><span class="co"># install.packages(c("survival", "purrr", "ggplot2", "gt", "tibble"))</span></span>
+<span><span class="co"># install.packages("pak")</span></span>
+<span><span class="co"># pak::pak("zabore/ipcw")</span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.emilyzabor.com/ipcw">ipcw</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gt.rstudio.com" class="external-link">gt</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/" class="external-link">tibble</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="simulate-data">Simulate data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
+<h2 id="simulate-data-and-compute-ipcw-weights">Simulate data and compute IPCW weights<a class="anchor" aria-label="anchor" href="#simulate-data-and-compute-ipcw-weights"></a>
 </h2>
-<p><code><a href="../reference/sim_data_CR.html">sim_data_cr()</a></code> generates competing risks data under a
-sub-distribution hazard model. The covariate <code>z1</code> is a
-four-level factor (PSA quartile). We use baseline-dependent censoring so
-that censoring is informative.</p>
+<p>First, create a simulated dataset of <code>n=500</code> patients
+using the <code><a href="../reference/sim_data_CR.html">sim_data_cr()</a></code> function. We use baseline-dependent
+censoring so that censoring is informative, and keep other parameters
+besides n at the default values:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">9843</span><span class="op">)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_data_CR.html">sim_data_cr</a></span><span class="op">(</span></span>
-<span>  n          <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  censoring  <span class="op">=</span> <span class="st">"baseline"</span>,</span>
-<span>  beta1      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1.5</span><span class="op">)</span>,</span>
-<span>  beta2      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.25</span><span class="op">)</span>,</span>
-<span>  beta3      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">3.4</span><span class="op">)</span>,</span>
-<span>  p          <span class="op">=</span> <span class="fl">0.3</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">delta</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  censor event_1 event_2 </span></span>
-<span><span class="co">#&gt;     165     212     123</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="explore-the-data">Explore the data<a class="anchor" aria-label="anchor" href="#explore-the-data"></a>
-</h2>
+<span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="../reference/sim_data_CR.html">sim_data_cr</a></span><span class="op">(</span></span>
+<span>    n <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>    censoring <span class="op">=</span> <span class="st">"baseline"</span>,</span>
+<span>    beta1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1.5</span><span class="op">)</span>,</span>
+<span>    beta2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.25</span><span class="op">)</span>,</span>
+<span>    beta3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">3.4</span><span class="op">)</span>,</span>
+<span>    p <span class="op">=</span> <span class="fl">0.3</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<p>Key columns in the simulated data include:</p>
+<ul>
+<li>
+<code>z1</code>: baseline PSA quartile (0 = lowest, 3 =
+highest)</li>
+<li>
+<code>delta</code>: event indicator (1 = metastasis, 2 = death, 0 =
+censored)</li>
+<li>
+<code>t</code>: observed time (event or censoring)</li>
+</ul>
+<p><code><a href="../reference/wide_to_long_CR.html">wide_to_long_cr()</a></code> converts the data to long format,
+which is required for IPCW estimation. The
+<code><a href="../reference/add_ipcw_weights_cr.html">add_ipcw_weights_cr()</a></code> function computes IPCW weights for
+competing risks data. The <code>strat</code> argument specifies whether
+to use stratified (non-parametric) weights (when
+<code>strat = "yes"</code>) or Cox model weights (when
+<code>strat = "no"</code>).</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Cumulative incidence by PSA quartile</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">delta</span><span class="op">)</span> <span class="op">~</span> <span class="va">z1</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span>,</span>
-<span>     col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Time"</span>, ylab <span class="op">=</span> <span class="st">"Probability"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"z1 ="</span>, <span class="fl">0</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span>, col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, lty <span class="op">=</span> <span class="fl">1</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="competing-risks-guided-example_files/figure-html/explore-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Censoring distribution by PSA quartile</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survfit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">Surv</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">delta</span> <span class="op">==</span> <span class="st">"censor"</span><span class="op">)</span> <span class="op">~</span> <span class="va">z1</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span>,</span>
-<span>     col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, xlab <span class="op">=</span> <span class="st">"Time"</span>, ylab <span class="op">=</span> <span class="st">"P(not censored)"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"z1 ="</span>, <span class="fl">0</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span>, col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, lty <span class="op">=</span> <span class="fl">1</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="competing-risks-guided-example_files/figure-html/censoring-dist-1.png" class="r-plt" alt="" width="576"></p>
-</div>
-<div class="section level2">
-<h2 id="convert-to-long-format-and-add-ipcw-weights">Convert to long format and add IPCW weights<a class="anchor" aria-label="anchor" href="#convert-to-long-format-and-add-ipcw-weights"></a>
-</h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/wide_to_long_CR.html">wide_to_long_cr</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Cox model weights</span></span>
@@ -131,43 +139,64 @@ that censoring is informative.</p>
 <span></span>
 <span><span class="co"># Stratified (non-parametric) weights</span></span>
 <span><span class="va">dat_long_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_ipcw_weights_cr.html">add_ipcw_weights_cr</a></span><span class="op">(</span><span class="va">dat_long</span>, strat <span class="op">=</span> <span class="st">"yes"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">dat_long_strat</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="va">p_notcens</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">40</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">xlab</a></span><span class="op">(</span><span class="st">"IPCW weight"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"Count"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="competing-risks-guided-example_files/figure-html/weight-histogram-1.png" class="r-plt" alt="" width="480"></p>
 </div>
 <div class="section level2">
-<h2 id="estimate-cumulative-incidence">Estimate cumulative incidence<a class="anchor" aria-label="anchor" href="#estimate-cumulative-incidence"></a>
+<h2 id="ipcw-cumulative-incidence-curves">IPCW cumulative incidence curves<a class="anchor" aria-label="anchor" href="#ipcw-cumulative-incidence-curves"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">esttimes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">t</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get an ordered vector of times</span></span>
+<span><span class="va">esttimes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">t</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ci_naive</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuminc_naive_cr.html">cuminc_naive_cr</a></span><span class="op">(</span><span class="va">dat</span>, <span class="va">esttimes</span><span class="op">)</span></span>
-<span><span class="va">ci_wavg</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuminc_waverage_cr.html">cuminc_waverage_cr</a></span><span class="op">(</span><span class="va">dat</span>, <span class="va">esttimes</span><span class="op">)</span></span>
-<span><span class="va">ci_cox</span>     <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuminc_ipcw_cr.html">cuminc_ipcw_cr</a></span><span class="op">(</span><span class="va">dat_long_cox</span>, <span class="va">esttimes</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">to_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>time <span class="op">=</span> <span class="va">esttimes</span>, est <span class="op">=</span> <span class="va">ci_wavg</span>, method <span class="op">=</span> <span class="st">"Weighted average"</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>time <span class="op">=</span> <span class="va">esttimes</span>, est <span class="op">=</span> <span class="va">ci_cox</span>,  method <span class="op">=</span> <span class="st">"Cox IPCW"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># Estimate cumulative incidence using the stratified (non-parametric) IPCW</span></span>
+<span><span class="va">ci_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuminc_waverage_cr.html">cuminc_waverage_cr</a></span><span class="op">(</span><span class="va">dat</span>, <span class="va">esttimes</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">to_plot</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">time</span>, y <span class="op">=</span> <span class="va">est</span>, colour <span class="op">=</span> <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="co"># Estimate cumulative incidence using the Cox model IPCW</span></span>
+<span><span class="va">ci_cox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuminc_ipcw_cr.html">cuminc_ipcw_cr</a></span><span class="op">(</span><span class="va">dat_long_cox</span>, <span class="va">esttimes</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Combine the two sets of weights for plotting</span></span>
+<span><span class="va">to_plot</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>time <span class="op">=</span> <span class="va">esttimes</span>, est <span class="op">=</span> <span class="va">ci_strat</span>, method <span class="op">=</span> <span class="st">"Weighted average"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>time <span class="op">=</span> <span class="va">esttimes</span>, est <span class="op">=</span> <span class="va">ci_cox</span>,  method <span class="op">=</span> <span class="st">"Cox IPCW"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">to_plot</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">time</span>, y <span class="op">=</span> <span class="va">est</span>, </span>
+<span>                    color <span class="op">=</span> <span class="va">method</span>, linetype <span class="op">=</span> <span class="va">method</span>, linewidth <span class="op">=</span> <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_step</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">xlim</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.65</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">xlab</a></span><span class="op">(</span><span class="st">"Time"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"Cumulative incidence of event 1"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">14</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span>, legend.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_color_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#f08122"</span>, <span class="st">"#5c2161"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_linetype_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"solid"</span>, <span class="st">"dashed"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_linewidth_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1.1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">xlim</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"Time"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cumulative incidence of metastasis"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    legend.position <span class="op">=</span> <span class="st">"bottom"</span>, </span>
+<span>    legend.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Removed 52 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_step()`).</span></span></code></pre></div>
 <p><img src="competing-risks-guided-example_files/figure-html/cuminc-plot-1.png" class="r-plt" alt="" width="576"></p>
+<p>The two sets of weights result in nearly identical weighted
+cumulative incidence curves in this example.</p>
 </div>
 <div class="section level2">
 <h2 id="fine-gray-ipcw-regression">Fine-Gray IPCW regression<a class="anchor" aria-label="anchor" href="#fine-gray-ipcw-regression"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_long_fg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fg_split_cr.html">fg_split_cr</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span>
+<p>Next, estimate the subdistribution hazard ratio (SHR) for the
+association between baseline PSA and metastasis, accounting for the
+competing risk of death and dependent censoring.</p>
+<p>The <code><a href="../reference/fg_split_cr.html">fg_split_cr()</a></code> function splits the data into
+event-specific datasets, and the <code><a href="../reference/add_fg_weights_cr.html">add_fg_weights_cr()</a></code>
+function computes IPCW weights for Fine-Gray regression. The
+<code><a href="../reference/fg_weighted_cr.html">fg_weighted_cr()</a></code> function fits a weighted Fine-Gray
+model.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Split the data into event-specific datasets for Fine-Gray regression</span></span>
+<span><span class="va">dat_long_fg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fg_split_cr.html">fg_split_cr</a></span><span class="op">(</span><span class="va">dat_long</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Stratified weights</span></span>
 <span><span class="va">dat_long_fg_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_fg_weights_cr.html">add_fg_weights_cr</a></span><span class="op">(</span><span class="va">dat_long_fg</span>, strat <span class="op">=</span> <span class="st">"yes"</span><span class="op">)</span></span>
@@ -181,50 +210,1090 @@ that censoring is informative.</p>
 <span><span class="va">fg_cox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fg_weighted_cr.html">fg_weighted_cr</a></span><span class="op">(</span><span class="va">dat_long_fg_cox</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">fg_cox</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      z11      z12      z13 </span></span>
-<span><span class="co">#&gt; 1.747758 2.574544 3.124305</span></span></code></pre></div>
+<span><span class="co">#&gt; 1.747758 2.574544 3.124305</span></span>
+<span></span>
+<span><span class="co"># Table of results</span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>    Method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fine-Gray stratified"</span>, <span class="st">"Fine-Gray Cox"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    Effect <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PSA Q2 vs Q1"</span>, <span class="st">"PSA Q3 vs Q1"</span>, <span class="st">"PSA Q4 vs Q1"</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>    Estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">fg_strat</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">fg_cox</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/gt.html" class="external-link">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/fmt_number.html" class="external-link">fmt_number</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="st">"Estimate"</span>, decimals <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span><span class="st">"IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights"</span><span class="op">)</span> </span></code></pre></div>
+<div id="gqdbmcporn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#gqdbmcporn table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#gqdbmcporn thead, #gqdbmcporn tbody, #gqdbmcporn tfoot, #gqdbmcporn tr, #gqdbmcporn td, #gqdbmcporn th {
+  border-style: none;
+}
+
+#gqdbmcporn p {
+  margin: 0;
+  padding: 0;
+}
+
+#gqdbmcporn .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#gqdbmcporn .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#gqdbmcporn .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#gqdbmcporn .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#gqdbmcporn .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#gqdbmcporn .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#gqdbmcporn .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#gqdbmcporn .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#gqdbmcporn .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#gqdbmcporn .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#gqdbmcporn .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#gqdbmcporn .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#gqdbmcporn .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#gqdbmcporn .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#gqdbmcporn .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gqdbmcporn .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#gqdbmcporn .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#gqdbmcporn .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#gqdbmcporn .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gqdbmcporn .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#gqdbmcporn .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gqdbmcporn .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#gqdbmcporn .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gqdbmcporn .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#gqdbmcporn .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gqdbmcporn .gt_left {
+  text-align: left;
+}
+
+#gqdbmcporn .gt_center {
+  text-align: center;
+}
+
+#gqdbmcporn .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#gqdbmcporn .gt_font_normal {
+  font-weight: normal;
+}
+
+#gqdbmcporn .gt_font_bold {
+  font-weight: bold;
+}
+
+#gqdbmcporn .gt_font_italic {
+  font-style: italic;
+}
+
+#gqdbmcporn .gt_super {
+  font-size: 65%;
+}
+
+#gqdbmcporn .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#gqdbmcporn .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#gqdbmcporn .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#gqdbmcporn .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#gqdbmcporn .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#gqdbmcporn .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#gqdbmcporn .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#gqdbmcporn .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#gqdbmcporn div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading">
+<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights</td>
+    </tr>
+<tr class="gt_col_headings">
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Method">Method</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Effect">Effect</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Estimate">Estimate</th>
+    </tr>
+</thead>
+<tbody class="gt_table_body">
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray stratified</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q2 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">1.71</td>
+</tr>
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray stratified</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q3 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">2.53</td>
+</tr>
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray stratified</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q4 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">3.17</td>
+</tr>
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray Cox</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q2 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">1.75</td>
+</tr>
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray Cox</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q3 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">2.57</td>
+</tr>
+<tr>
+<td headers="Method" class="gt_row gt_left">Fine-Gray Cox</td>
+<td headers="Effect" class="gt_row gt_left">PSA Q4 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">3.12</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div class="section level2">
 <h2 id="bootstrap-standard-errors">Bootstrap standard errors<a class="anchor" aria-label="anchor" href="#bootstrap-standard-errors"></a>
 </h2>
 <p>Bootstrap resampling provides valid standard errors when the weights
-are estimated. The example below uses 500 samples; run in parallel as
-needed.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20240917</span><span class="op">)</span></span>
+are estimated. <code><a href="../reference/get_ipcw_boot_cr.html">get_ipcw_boot_cr()</a></code> draws bootstrap samples
+from the wide-format data, converts each to long format, and appends
+IPCW weights in one step, mirroring <code><a href="../reference/get_ipcw_boot_se.html">get_ipcw_boot_se()</a></code> for
+the single-event case. Its <code>strat</code> argument controls the
+weight type, matching <code><a href="../reference/add_ipcw_weights_cr.html">add_ipcw_weights_cr()</a></code>. Because this
+process takes some time, the resulting object <code>fg_strat_boot</code>
+is included in this package.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Bootstrap samples with Cox IPCW weights</span></span>
+<span><span class="va">boot_dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ipcw_boot_cr.html">get_ipcw_boot_cr</a></span><span class="op">(</span><span class="va">dat</span>, B <span class="op">=</span> <span class="fl">500</span>, strat <span class="op">=</span> <span class="st">"no"</span>, seed <span class="op">=</span> <span class="fl">20240917</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">boot_dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">500</span>, <span class="op">~</span> <span class="fu">slice_sample</span><span class="op">(</span><span class="va">dat</span>, prop <span class="op">=</span> <span class="fl">1</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">boot_dat</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span> <span class="va">x</span><span class="op">$</span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>; <span class="va">x</span> <span class="op">}</span><span class="op">)</span></span>
-<span><span class="va">boot_dat_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="va">wide_to_long_cr</span><span class="op">)</span></span>
+<span><span class="co"># Fit the stratified Fine-Gray model to each bootstrap sample</span></span>
+<span><span class="va">fg_strat_boot</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span></span>
+<span>    <span class="va">boot_dat_long</span>, </span>
+<span>    <span class="op">~</span> <span class="fu"><a href="../reference/fg_weighted_cr.html">fg_weighted_cr</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="../reference/add_fg_weights_cr.html">add_fg_weights_cr</a></span><span class="op">(</span><span class="fu"><a href="../reference/fg_split_cr.html">fg_split_cr</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span>, strat <span class="op">=</span> <span class="st">"yes"</span><span class="op">)</span>, extend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span></span>
+<span>    <span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Weighted-average cumulative incidence bootstrap</span></span>
-<span><span class="va">w_avg_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat</span>, <span class="op">~</span> <span class="fu"><a href="../reference/cuminc_waverage_cr.html">cuminc_waverage_cr</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">esttimes</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">w_avg_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">w_avg_boot</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">esttimes</span><span class="op">)</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">lower_wavg</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">w_avg_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                 <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.025</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">upper_wavg</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">w_avg_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                 <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.975</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fg_strat_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">fg_strat_boot</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/get_boot_pci_cr.html">get_boot_pci_cr()</a></code> then computes the bootstrap percentile
+interval for each column of a matrix of bootstrap estimates, mirroring
+<code><a href="../reference/get_boot_pci_se.html">get_boot_pci_se()</a></code> for the single-event case.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pci_fg_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_boot_pci_cr.html">get_boot_pci_cr</a></span><span class="op">(</span><span class="va">fg_strat_boot</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Cox IPCW cumulative incidence bootstrap</span></span>
-<span><span class="va">cox_boot</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat_long</span>, <span class="op">~</span> <span class="fu"><a href="../reference/cuminc_ipcw_cr.html">cuminc_ipcw_cr</a></span><span class="op">(</span><span class="fu"><a href="../reference/add_ipcw_weights_cr.html">add_ipcw_weights_cr</a></span><span class="op">(</span><span class="va">.</span>, strat <span class="op">=</span> <span class="st">"no"</span><span class="op">)</span>, <span class="va">esttimes</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">cox_boot</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">cox_boot</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">esttimes</span><span class="op">)</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">lower_cox</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">cox_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                   <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.025</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">upper_cox</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">cox_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                   <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.975</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Fine-Gray stratified bootstrap</span></span>
-<span><span class="va">boot_dat_fg</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat_long</span>, <span class="va">fg_split_cr</span><span class="op">)</span></span>
-<span><span class="va">fg_strat_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">boot_dat_fg</span>, <span class="op">~</span> <span class="fu"><a href="../reference/fg_weighted_cr.html">fg_weighted_cr</a></span><span class="op">(</span><span class="fu"><a href="../reference/add_fg_weights_cr.html">add_fg_weights_cr</a></span><span class="op">(</span><span class="va">.</span>, strat <span class="op">=</span> <span class="st">"yes"</span><span class="op">)</span>,</span>
-<span>                                                 extend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">fg_strat_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">fg_strat_boot</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">lower_fg_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">fg_strat_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                     <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.025</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">upper_fg_strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">fg_strat_boot</span>, <span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span>                     <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.975</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">result_tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Effect <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PSA Q2 vs Q1"</span>, <span class="st">"PSA Q3 vs Q1"</span>, <span class="st">"PSA Q4 vs Q1"</span><span class="op">)</span>,</span>
+<span>  Estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">fg_strat</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>  Lower_95pct_PI <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">pci_fg_strat</span><span class="op">[</span><span class="st">"lower"</span>, <span class="op">]</span><span class="op">)</span>,</span>
+<span>  Upper_95pct_PI <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">pci_fg_strat</span><span class="op">[</span><span class="st">"upper"</span>, <span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">fg_strat</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">lower_fg_strat</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">upper_fg_strat</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">result_tab</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/gt.html" class="external-link">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/fmt_number.html" class="external-link">fmt_number</a></span><span class="op">(</span></span>
+<span>    columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Estimate"</span>, <span class="st">"Lower_95pct_PI"</span>, <span class="st">"Upper_95pct_PI"</span><span class="op">)</span>, </span>
+<span>    decimals <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/cols_label.html" class="external-link">cols_label</a></span><span class="op">(</span></span>
+<span>    Lower_95pct_PI <span class="op">=</span> <span class="st">"Lower 95% PI"</span>,</span>
+<span>    Upper_95pct_PI <span class="op">=</span> <span class="st">"Upper 95% PI"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="co"># Add a footnote</span></span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_footnote.html" class="external-link">tab_footnote</a></span><span class="op">(</span></span>
+<span>    footnote <span class="op">=</span> <span class="st">"PI = percentile interval"</span>,</span>
+<span>    locations <span class="op">=</span> <span class="fu"><a href="https://gt.rstudio.com/reference/cells_column_labels.html" class="external-link">cells_column_labels</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Lower_95pct_PI</span>, <span class="va">Upper_95pct_PI</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span></span>
+<span>    <span class="st">"IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<div id="auiemtckto" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#auiemtckto table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#auiemtckto thead, #auiemtckto tbody, #auiemtckto tfoot, #auiemtckto tr, #auiemtckto td, #auiemtckto th {
+  border-style: none;
+}
+
+#auiemtckto p {
+  margin: 0;
+  padding: 0;
+}
+
+#auiemtckto .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#auiemtckto .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#auiemtckto .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#auiemtckto .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#auiemtckto .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#auiemtckto .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#auiemtckto .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#auiemtckto .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#auiemtckto .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#auiemtckto .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#auiemtckto .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#auiemtckto .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#auiemtckto .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#auiemtckto .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#auiemtckto .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#auiemtckto .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#auiemtckto .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#auiemtckto .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#auiemtckto .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#auiemtckto .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#auiemtckto .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#auiemtckto .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#auiemtckto .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#auiemtckto .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#auiemtckto .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#auiemtckto .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#auiemtckto .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#auiemtckto .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#auiemtckto .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#auiemtckto .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#auiemtckto .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#auiemtckto .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#auiemtckto .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#auiemtckto .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#auiemtckto .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#auiemtckto .gt_left {
+  text-align: left;
+}
+
+#auiemtckto .gt_center {
+  text-align: center;
+}
+
+#auiemtckto .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#auiemtckto .gt_font_normal {
+  font-weight: normal;
+}
+
+#auiemtckto .gt_font_bold {
+  font-weight: bold;
+}
+
+#auiemtckto .gt_font_italic {
+  font-style: italic;
+}
+
+#auiemtckto .gt_super {
+  font-size: 65%;
+}
+
+#auiemtckto .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#auiemtckto .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#auiemtckto .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#auiemtckto .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#auiemtckto .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#auiemtckto .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#auiemtckto .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#auiemtckto .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#auiemtckto div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading">
+<td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights</td>
+    </tr>
+<tr class="gt_col_headings">
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Effect">Effect</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Estimate">Estimate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Lower_95pct_PI">Lower 95% PI<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span>
+</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Upper_95pct_PI">Upper 95% PI<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span>
+</th>
+    </tr>
+</thead>
+<tbody class="gt_table_body">
+<tr>
+<td headers="Effect" class="gt_row gt_left">PSA Q2 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">1.71</td>
+<td headers="Lower_95pct_PI" class="gt_row gt_right">1.02</td>
+<td headers="Upper_95pct_PI" class="gt_row gt_right">3.11</td>
+</tr>
+<tr>
+<td headers="Effect" class="gt_row gt_left">PSA Q3 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">2.53</td>
+<td headers="Lower_95pct_PI" class="gt_row gt_right">1.57</td>
+<td headers="Upper_95pct_PI" class="gt_row gt_right">4.32</td>
+</tr>
+<tr>
+<td headers="Effect" class="gt_row gt_left">PSA Q4 vs Q1</td>
+<td headers="Estimate" class="gt_row gt_right">3.17</td>
+<td headers="Lower_95pct_PI" class="gt_row gt_right">1.97</td>
+<td headers="Upper_95pct_PI" class="gt_row gt_right">5.55</td>
+</tr>
+</tbody>
+<tfoot><tr class="gt_footnotes">
+<td class="gt_footnote" colspan="4">
+<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>1</sup></span> PI = percentile interval</td>
+    </tr></tfoot>
+</table>
+</div>
+<p>The bootstrap logic can be generalized to any competing risks
+quantity that returns a vector or matrix of estimates. For example,
+<code><a href="../reference/plot_ipcw_cuminc_boot_ci_cr.html">plot_ipcw_cuminc_boot_ci_cr()</a></code> combines the bootstrap
+samples from <code><a href="../reference/get_ipcw_boot_cr.html">get_ipcw_boot_cr()</a></code> with the Cox IPCW
+cumulative incidence estimate to produce a cumulative incidence plot
+with bootstrap percentile confidence intervals, mirroring
+<code><a href="../reference/plot_ipcw_km_boot_ci_se.html">plot_ipcw_km_boot_ci_se()</a></code> for the single-event case.
+Bootstrapping the data and then generating the pointwise confidence
+intervals is time consuming, and the below code is not evaluated here.
+The following plot is an IPCW weighted cumulative incidence of
+metastatis, using the Cox model weights, with bootstrap confidence
+intervals.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">boot_dat_long</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="../reference/get_ipcw_boot_cr.html">get_ipcw_boot_cr</a></span><span class="op">(</span></span>
+<span>    <span class="va">dat</span>, </span>
+<span>    B <span class="op">=</span> <span class="fl">500</span>, </span>
+<span>    strat <span class="op">=</span> <span class="st">"no"</span>, </span>
+<span>    seed <span class="op">=</span> <span class="fl">20240917</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">plot_base</span> <span class="op">&lt;-</span> </span>
+<span>  <span class="fu"><a href="../reference/plot_ipcw_cuminc_boot_ci_cr.html">plot_ipcw_cuminc_boot_ci_cr</a></span><span class="op">(</span></span>
+<span>    <span class="va">boot_dat_long</span>, </span>
+<span>    <span class="va">dat_long_cox</span>, </span>
+<span>    esttimes <span class="op">=</span> <span class="va">esttimes</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">plot_base</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">6</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"Time"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cumulative incidence of metastasis"</span></span>
+<span>  <span class="op">)</span> </span></code></pre></div>
+<p><img src="ipcw_cr_boot_ci.png" class="r-plt" alt="" width="100%"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

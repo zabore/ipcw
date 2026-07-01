@@ -54,3 +54,13 @@ estimation, cumulative incidence estimation, and Fine-Gray regression.
   : Naive Fine-Gray sub-distribution hazard regression
 - [`fg_weighted_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted_cr.md)
   : IPCW-weighted Fine-Gray sub-distribution hazard regression
+- [`get_ipcw_boot_cr()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot_cr.md)
+  : Bootstrap IPCW weighted data for competing risks survival analysis
+- [`get_boot_pci_cr()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci_cr.md)
+  : Compute bootstrap percentile confidence intervals for competing
+  risks estimates
+- [`plot_ipcw_cuminc_boot_ci_cr()`](https://www.emilyzabor.com/ipcw/reference/plot_ipcw_cuminc_boot_ci_cr.md)
+  : Plot IPCW cumulative incidence with bootstrap percentile confidence
+  intervals
+- [`fg_strat_boot`](https://www.emilyzabor.com/ipcw/reference/fg_strat_boot.md)
+  : Bootstrap Fine-Gray coefficients from stratified IPCW weights
