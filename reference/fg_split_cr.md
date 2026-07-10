@@ -1,4 +1,4 @@
-# Prepare long-format data for Fine-Gray weighted regression
+# Prepare long-format data for Fine-Gray regression
 
 After a type-2 event, subjects are artificially re-entered into the risk
 set (as in the Fine-Gray sub-distribution hazard model). This function

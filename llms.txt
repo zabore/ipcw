@@ -161,13 +161,13 @@ estimation, cumulative incidence estimation, and Fine-Gray regression.
 - [`cuminc_ipcw_cr()`](https://www.emilyzabor.com/ipcw/reference/cuminc_ipcw_cr.md)
   : Cox model IPCW cumulative incidence estimate
 - [`fg_split_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_split_cr.md)
-  : Prepare long-format data for Fine-Gray weighted regression
+  : Prepare long-format data for Fine-Gray regression
 - [`add_fg_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights_cr.md)
-  : Add Fine-Gray IPCW weights to Fine-Gray split data
+  : Add Fine-Gray weights to Fine-Gray split data
 - [`fg_naive_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_naive_cr.md)
   : Naive Fine-Gray sub-distribution hazard regression
 - [`fg_weighted_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted_cr.md)
-  : IPCW-weighted Fine-Gray sub-distribution hazard regression
+  : FG-weighted Fine-Gray sub-distribution hazard regression
 - [`get_ipcw_boot_cr()`](https://www.emilyzabor.com/ipcw/reference/get_ipcw_boot_cr.md)
   : Bootstrap IPCW weighted data for competing risks survival analysis
 - [`get_boot_pci_cr()`](https://www.emilyzabor.com/ipcw/reference/get_boot_pci_cr.md)
@@ -177,7 +177,7 @@ estimation, cumulative incidence estimation, and Fine-Gray regression.
   : Plot IPCW cumulative incidence with bootstrap percentile confidence
   intervals
 - [`fg_strat_boot`](https://www.emilyzabor.com/ipcw/reference/fg_strat_boot.md)
-  : Bootstrap Fine-Gray coefficients from stratified IPCW weights
+  : Bootstrap Fine-Gray coefficients from stratified FG weights
 
 # Articles
 

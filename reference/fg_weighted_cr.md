@@ -1,8 +1,8 @@
-# IPCW-weighted Fine-Gray sub-distribution hazard regression
+# FG-weighted Fine-Gray sub-distribution hazard regression
 
 Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-inverse of the probability of remaining uncensored after the competing
-event (`p_notcens_after_death`), and uses a robust sandwich variance via
+probability of remaining uncensored after the competing event
+(`p_notcens_after_death`), and uses a robust sandwich variance via
 `cluster(id)`.
 
 ## Usage

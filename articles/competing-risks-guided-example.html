@@ -184,14 +184,14 @@ to use stratified (non-parametric) weights (when
 cumulative incidence curves in this example.</p>
 </div>
 <div class="section level2">
-<h2 id="fine-gray-ipcw-regression">Fine-Gray IPCW regression<a class="anchor" aria-label="anchor" href="#fine-gray-ipcw-regression"></a>
+<h2 id="fine-gray-regression">Fine-Gray regression<a class="anchor" aria-label="anchor" href="#fine-gray-regression"></a>
 </h2>
 <p>Next, estimate the subdistribution hazard ratio (SHR) for the
 association between baseline PSA and metastasis, accounting for the
 competing risk of death and dependent censoring.</p>
 <p>The <code><a href="../reference/fg_split_cr.html">fg_split_cr()</a></code> function splits the data into
 event-specific datasets, and the <code><a href="../reference/add_fg_weights_cr.html">add_fg_weights_cr()</a></code>
-function computes IPCW weights for Fine-Gray regression. The
+function computes weights for Fine-Gray regression. The
 <code><a href="../reference/fg_weighted_cr.html">fg_weighted_cr()</a></code> function fits a weighted Fine-Gray
 model.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -220,7 +220,7 @@ model.</p>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://gt.rstudio.com/reference/gt.html" class="external-link">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://gt.rstudio.com/reference/fmt_number.html" class="external-link">fmt_number</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="st">"Estimate"</span>, decimals <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span><span class="st">"IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights"</span><span class="op">)</span> </span></code></pre></div>
+<span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span><span class="st">"Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox weights"</span><span class="op">)</span> </span></code></pre></div>
 <div id="gqdbmcporn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>#gqdbmcporn table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -673,7 +673,7 @@ model.</p>
 <table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
 <thead>
 <tr class="gt_heading">
-<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights</td>
+<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox weights</td>
     </tr>
 <tr class="gt_col_headings">
 <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Method">Method</th>
@@ -769,7 +769,7 @@ interval for each column of a matrix of bootstrap estimates, mirroring
 <span>    locations <span class="op">=</span> <span class="fu"><a href="https://gt.rstudio.com/reference/cells_column_labels.html" class="external-link">cells_column_labels</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Lower_95pct_PI</span>, <span class="va">Upper_95pct_PI</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://gt.rstudio.com/reference/tab_header.html" class="external-link">tab_header</a></span><span class="op">(</span></span>
-<span>    <span class="st">"IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights"</span></span>
+<span>    <span class="st">"Fine-Gray regression results for the association between PSA and metastasis, using stratified weights"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <div id="auiemtckto" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>#auiemtckto table {
@@ -1223,7 +1223,7 @@ interval for each column of a matrix of bootstrap estimates, mirroring
 <table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
 <thead>
 <tr class="gt_heading">
-<td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights</td>
+<td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Fine-Gray regression results for the association between PSA and metastasis, using stratified weights</td>
     </tr>
 <tr class="gt_col_headings">
 <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Effect">Effect</th>
@@ -1306,7 +1306,7 @@ intervals.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
