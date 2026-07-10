@@ -2,7 +2,7 @@
 % Please edit documentation in R/competing-risks.R
 \name{fg_weighted_cr}
 \alias{fg_weighted_cr}
-\title{IPCW-weighted Fine-Gray sub-distribution hazard regression}
+\title{FG-weighted Fine-Gray sub-distribution hazard regression}
 \usage{
 fg_weighted_cr(
   data_long_fg,
@@ -30,7 +30,7 @@ sub-distribution hazard ratio and its robust standard error.
 }
 \description{
 Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-inverse of the probability of remaining uncensored after the competing event
+probability of remaining uncensored after the competing event
 (\code{p_notcens_after_death}), and uses a robust sandwich variance via
 \code{cluster(id)}.
 }

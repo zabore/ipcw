@@ -2,8 +2,7 @@
 
 Generates a dataset with two competing events under a sub-distribution
 hazard model parameterized by a four-level baseline covariate `z1`.
-Optionally adds independent or covariate-dependent administrative
-censoring.
+Optionally adds independent or covariate-dependent censoring.
 
 ## Usage
 

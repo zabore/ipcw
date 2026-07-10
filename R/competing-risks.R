@@ -2,7 +2,7 @@
 #'
 #' Generates a dataset with two competing events under a sub-distribution
 #' hazard model parameterized by a four-level baseline covariate `z1`.
-#' Optionally adds independent or covariate-dependent administrative censoring.
+#' Optionally adds independent or covariate-dependent censoring.
 #'
 #' @param n Integer. Number of subjects to simulate. Default is 100.
 #' @param censoring Character string specifying the censoring mechanism.
@@ -347,7 +347,7 @@ cuminc_ipcw_cr <- function(data_long,
 }
 
 
-#' Prepare long-format data for Fine-Gray weighted regression
+#' Prepare long-format data for Fine-Gray regression
 #'
 #' After a type-2 event, subjects are artificially re-entered into the risk set
 #' (as in the Fine-Gray sub-distribution hazard model). This function appends
@@ -395,7 +395,7 @@ fg_split_cr <- function(data_long, covariate = "z1", event2_level = "event_2") {
 }
 
 
-#' Add Fine-Gray IPCW weights to Fine-Gray split data
+#' Add Fine-Gray weights to Fine-Gray split data
 #'
 #' Computes the probability of remaining uncensored after a type-2 event
 #' and appends it as column `p_notcens_after_death`.
@@ -480,10 +480,10 @@ fg_naive_cr <- function(dat, time_var = "t", event_var = "delta",
 }
 
 
-#' IPCW-weighted Fine-Gray sub-distribution hazard regression
+#' FG-weighted Fine-Gray sub-distribution hazard regression
 #'
 #' Fits a Fine-Gray model on the Fine-Gray split dataset, weighting by the
-#' inverse of the probability of remaining uncensored after the competing event
+#' probability of remaining uncensored after the competing event
 #' (`p_notcens_after_death`), and uses a robust sandwich variance via
 #' `cluster(id)`.
 #'

@@ -1,4 +1,4 @@
-# Add Fine-Gray IPCW weights to Fine-Gray split data
+# Add Fine-Gray weights to Fine-Gray split data
 
 Computes the probability of remaining uncensored after a type-2 event
 and appends it as column `p_notcens_after_death`.

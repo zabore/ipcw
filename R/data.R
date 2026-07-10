@@ -17,7 +17,7 @@
 "cox_boot_lhr"
 
 
-#' Bootstrap Fine-Gray coefficients from stratified IPCW weights
+#' Bootstrap Fine-Gray coefficients from stratified FG weights
 #'
 #' A 500-by-3 matrix of bootstrap log sub-distribution hazard ratio estimates
 #' for the effect of baseline PSA quartile (`z1`) on metastasis, each row

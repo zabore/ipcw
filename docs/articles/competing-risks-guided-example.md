@@ -125,7 +125,7 @@ ggplot(to_plot, aes(x = time, y = est,
 The two sets of weights result in nearly identical weighted cumulative
 incidence curves in this example.
 
-## Fine-Gray IPCW regression
+## Fine-Gray regression
 
 Next, estimate the subdistribution hazard ratio (SHR) for the
 association between baseline PSA and metastasis, accounting for the
@@ -135,7 +135,7 @@ The
 [`fg_split_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_split_cr.md)
 function splits the data into event-specific datasets, and the
 [`add_fg_weights_cr()`](https://www.emilyzabor.com/ipcw/reference/add_fg_weights_cr.md)
-function computes IPCW weights for Fine-Gray regression. The
+function computes weights for Fine-Gray regression. The
 [`fg_weighted_cr()`](https://www.emilyzabor.com/ipcw/reference/fg_weighted_cr.md)
 function fits a weighted Fine-Gray model.
 
@@ -166,10 +166,10 @@ tibble(
   ) |> 
   gt() |> 
   fmt_number(columns = "Estimate", decimals = 2) |>
-  tab_header("IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights") 
+  tab_header("Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox weights") 
 ```
 
-| IPCW Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox IPCW weights |  |  |
+| Fine-gray regression results for the association between PSA and metastasis, using both stratified and Cox weights |  |  |
 |----|----|----|
 | Method | Effect | Estimate |
 | Fine-Gray stratified | PSA Q2 vs Q1 | 1.71 |
@@ -242,11 +242,11 @@ result_tab |>
     locations = cells_column_labels(columns = c(Lower_95pct_PI, Upper_95pct_PI))
   ) |> 
   tab_header(
-    "IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights"
+    "Fine-Gray regression results for the association between PSA and metastasis, using stratified weights"
   )
 ```
 
-| IPCW Fine-Gray regression results for the association between PSA quartile and metastasis, using stratified IPCW weights |  |  |  |
+| Fine-Gray regression results for the association between PSA and metastasis, using stratified weights |  |  |  |
 |----|----|----|----|
 | Effect | Estimate | Lower 95% PI¹ | Upper 95% PI¹ |
 | PSA Q2 vs Q1 | 1.71 | 1.02 | 3.11 |

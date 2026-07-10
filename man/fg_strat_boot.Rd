@@ -3,7 +3,7 @@
 \docType{data}
 \name{fg_strat_boot}
 \alias{fg_strat_boot}
-\title{Bootstrap Fine-Gray coefficients from stratified IPCW weights}
+\title{Bootstrap Fine-Gray coefficients from stratified FG weights}
 \format{
 A numeric matrix with 500 rows (bootstrap replicates) and 3
 columns (\code{z1} levels 1, 2, and 3 vs. the reference level 0).

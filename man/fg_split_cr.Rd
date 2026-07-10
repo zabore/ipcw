@@ -2,7 +2,7 @@
 % Please edit documentation in R/competing-risks.R
 \name{fg_split_cr}
 \alias{fg_split_cr}
-\title{Prepare long-format data for Fine-Gray weighted regression}
+\title{Prepare long-format data for Fine-Gray regression}
 \usage{
 fg_split_cr(data_long, covariate = "z1", event2_level = "event_2")
 }

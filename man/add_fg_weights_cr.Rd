@@ -2,7 +2,7 @@
 % Please edit documentation in R/competing-risks.R
 \name{add_fg_weights_cr}
 \alias{add_fg_weights_cr}
-\title{Add Fine-Gray IPCW weights to Fine-Gray split data}
+\title{Add Fine-Gray weights to Fine-Gray split data}
 \usage{
 add_fg_weights_cr(data_long_fg, covariate = "z1", strat = "no")
 }
